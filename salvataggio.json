@@ -1,0 +1,17 @@
+{
+    "nome": "fede",
+    "classe": "guerriero",
+    "hp": 25,
+    "mappa": "taverna",
+    "posizione": [
+        12,
+        8
+    ],
+    "inventario": [
+        "Pozione di cura",
+        "Chiave comune",
+        "Spada corta",
+        "Cotta di maglia",
+        "Amuleto della forza"
+    ]
+}
