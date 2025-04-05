@@ -1,92 +1,106 @@
-# Dungeon Master AI – Python RPG Engine (Backend Only)
+# 🧠 Dungeon Master AI – Python RPG Engine (Backend Only)
 
-This repository contains the **backend core** of a modular role-playing game (RPG) engine, designed in Python using a clean object-oriented architecture and a stack-based finite state machine (FSM). The goal of the project is to evolve into an AI-driven, narratively rich RPG system, where a virtual Dungeon Master powered by GPT can enhance player immersion.
+This repository contains the **backend core** of a modular role-playing game (RPG) engine built in **Python**, featuring a clean object-oriented architecture and a **stack-based finite state machine (FSM)**. The goal is to evolve into a GPT-powered, narrative-driven RPG system where an AI Dungeon Master enhances immersion through dynamic interactions.
+
+---
 
 ## 🧱 Architecture Overview
 
-The project is organized into well-defined modules:
+Clear and scalable modular structure:
 
+```
 gioco_rpg/
+├── main.py                     # Game entry point
+├── core/                      # Game loop and I/O interface
+├── entities/                  # Player, NPCs, enemies, shared logic
+├── items/                     # Objects and interactive elements
+├── states/                    # Game states (map, combat, inventory...)
+├── util/                      # Dice rolling, utility functions
+├── world/                     # Map system and environments
+├── server.py                  # Flask server for web frontend (NEW)
+```
 
-├── main.py # Entry point 
+Each phase of the game (exploration, dialogue, combat, inventory) is handled via a **stacked FSM**, allowing smooth transitions and layered states (e.g., opening a chest pushes a loot or dialog state on top of exploration).
 
-├── core/ # Game loop and I/O interface 
+---
 
-├── entities/ # Player, NPCs, enemies, shared logic 
+## 🔧 Core Features
 
-├── items/ # Objects and interactive elements 
+- **Modular and testable** architecture
+- Full separation of **game logic and UI**
+- **ASCII-based tile map** with movement controller
+- **Stack-based FSM** for handling dynamic game states
+- **EntityFactory** for generating dynamic content
+- Full **serialization and deserialization** (player, states, map, NPCs)
+- No Pygame dependency (backend only)
+- Abstract **I/O interface** (`GameIO`, `TerminalIO`) for easy integration of GUI or AI
 
-├── states/ # Game states (map, combat, inventory, etc.) 
+---
 
-├── util/ # Dice rolling, helper functions 
+## 🚀 Recent Updates
 
-└── world/ # Map system, tile control, environment
+- Added **Flask server** for future web interface (`server.py`)
+- Full serialization implemented for:
+  - Player, NPCs, interactive items
+  - Positions and tile-based environments
+  - Game states (inventory, dialogue, map, combat)
+- Added `to_dict` / `from_dict` to almost all classes
+- Robust handling of temporary states and missing data
+- Enemies now calculate damage using `forza_base` modifiers
+- Inventory and dialogue states now have structured phase handling
 
+---
 
-Each game phase (map exploration, combat, dialogues, inventory management) is handled through a **stacked FSM** (`BaseState`), enabling smooth transitions and layered interactions (e.g., opening a chest pauses exploration and pushes a dialog or loot state).
+## 📅 Roadmap
 
-## 🧠 Features
+✅ Unified map system (`MappaStateEnhanced`)  
+✅ Centralized dynamic generation via `EntityFactory`  
+⬜ Remove legacy states (`TavernaState`, `MercatoState`)  
+⬜ Add modular I/O interfaces (GUI, AI)  
+⬜ Implement **AI Dungeon Master** (GPT-based)  
+⬜ Create web-based frontend (Flask + HTMX)
 
-- Modular structure ready for extension
-- Complete core game logic (movement, combat, dialogues, inventory)
-- ASCII-based map system using a tile controller
-- Entity factory system for dynamic content generation
-- Full separation of game logic from user interface (ready for future web/GUI/AI integrations)
-- Fully testable backend (no Pygame dependencies in this repo)
+---
 
-## 🚧 Current Objective
+## 🌌 Future Vision – Dungeon Master AI
 
+This backend will serve as the foundation for a GPT-enhanced RPG with:
 
-📅 Roadmap
+- **AI Dungeon Master** reacting to player actions
+- **Natural language command parsing**
+- Mapping player choices to narrative events
+- Web or terminal UI powered by abstracted `IOInterface`
 
+---
 
- Unified map exploration with MappaStateEnhanced (done)
+## ▶️ Getting Started
 
- Centralized NPC/object generation via EntityFactory (done)
-
- Remove legacy states (TavernaState, MercatoState)
-
- Add modular I/O interfaces (text, GUI, AI)
-
- Implement AI Dungeon Master using GPT API
-
- Web-based frontend (Flask + HTMX or similar)
-
-
-
-## 🧠 Future Vision: Dungeon Master AI
-
-This project will serve as the backend foundation for a narrative-driven AI experience. Planned integrations include:
-
-- GPT-powered Dungeon Master that reacts to in-game events and generates dynamic descriptions or dialogues
-- Natural language command parsing
-- Decision tree to narrative generation mapping
-- Future web UI or terminal interface based on abstracted `IOInterface`
-
-## 📦 Getting Started
-
-Clone the repository and run the main game loop:
-
+```
 git clone https://github.com/yourusername/gioco_rpg.git
 cd gioco_rpg
 python main.py
-The game will launch in a text-based interface, allowing you to explore, interact, fight, and talk to characters.
+```
 
-🧪 Requirements
-Python 3.10+
+The game will launch in a text-based interface where you can explore, interact, fight, and talk to characters.
 
-No external libraries required (standard library only)
+---
 
+## 🧪 Requirements
 
-🙌 Contribute
-I'm seeking collaborators who want to help build:
+- Python **3.10+**
+- No external libraries required (uses only **standard library**)
 
-Web interface (Flask/HTMX)
+---
 
-AI narrative engine (GPT-based)
+## 🙌 Contribute
 
-Storyline and world-building
+Looking for collaborators interested in:
 
-UI/UX feedback or playtesting
+- Web frontend (Flask + HTMX)
+- GPT-based narrative engine
+- Story and worldbuilding
+- UI/UX feedback and playtesting
 
-Feel free to open issues, forks or reach out directly.
+Feel free to open an issue, fork the repo, or contact me directly if you’d like to join the project!
+
+---
