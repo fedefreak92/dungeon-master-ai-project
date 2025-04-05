@@ -156,3 +156,117 @@ class Mappa:
                     self.imposta_muro(x, y)
                 elif cella == 'P':
                     self.imposta_posizione_iniziale(x, y)
+    
+    def to_dict(self):
+        """
+        Converte la mappa in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione della mappa in formato dizionario
+        """
+        # Converte la griglia in una lista per la serializzazione
+        griglia_serializzata = [riga.copy() for riga in self.griglia]
+        
+        # Serializza oggetti e NPG usando to_dict se disponibile
+        oggetti_dict = {}
+        for pos, obj in self.oggetti.items():
+            if hasattr(obj, 'to_dict'):
+                oggetti_dict[str(pos)] = obj.to_dict()
+            else:
+                oggetti_dict[str(pos)] = {"nome": obj.nome, "token": obj.token}
+        
+        npg_dict = {}
+        for pos, npg in self.npg.items():
+            if hasattr(npg, 'to_dict'):
+                npg_dict[str(pos)] = npg.to_dict()
+            else:
+                npg_dict[str(pos)] = {"nome": npg.nome, "token": npg.token}
+        
+        # Serializza le porte
+        porte_dict = {str(pos): list(dest) for pos, dest in self.porte.items()}
+        
+        return {
+            "nome": self.nome,
+            "larghezza": self.larghezza,
+            "altezza": self.altezza,
+            "tipo": self.tipo,
+            "griglia": griglia_serializzata,
+            "oggetti": oggetti_dict,
+            "npg": npg_dict,
+            "porte": porte_dict,
+            "pos_iniziale_giocatore": self.pos_iniziale_giocatore
+        }
+        
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea una nuova istanza di Mappa da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati della mappa
+            
+        Returns:
+            Mappa: Nuova istanza di Mappa
+        """
+        # Crea una nuova mappa con i parametri di base
+        mappa = cls(
+            nome=data.get("nome", "mappa_sconosciuta"),
+            larghezza=data.get("larghezza", 10),
+            altezza=data.get("altezza", 10),
+            tipo=data.get("tipo", "interno")
+        )
+        
+        # Carica la griglia
+        if "griglia" in data:
+            mappa.griglia = [riga.copy() for riga in data["griglia"]]
+        
+        # Carica gli oggetti
+        from items.oggetto_interattivo import OggettoInterattivo
+        for pos_str, obj_data in data.get("oggetti", {}).items():
+            try:
+                # Converti la stringa di posizione in tupla
+                pos = eval(pos_str)  # Sicuro perché la posizione è una tupla semplice (x, y)
+                
+                # Crea l'oggetto usando from_dict se disponibile
+                if isinstance(obj_data, dict):
+                    obj = OggettoInterattivo.from_dict(obj_data)
+                    mappa.oggetti[pos] = obj
+                    # Aggiorna la posizione dell'oggetto
+                    obj.posizione = (pos[0], pos[1], mappa.nome)
+            except Exception as e:
+                print(f"Errore durante il caricamento dell'oggetto in {pos_str}: {e}")
+        
+        # Carica gli NPG
+        from entities.npg import NPG
+        for pos_str, npg_data in data.get("npg", {}).items():
+            try:
+                # Converti la stringa di posizione in tupla
+                pos = eval(pos_str)
+                
+                # Crea l'NPG usando from_dict se disponibile
+                if isinstance(npg_data, dict):
+                    if hasattr(NPG, 'from_dict'):
+                        npg = NPG.from_dict(npg_data)
+                    else:
+                        npg = NPG(npg_data.get("nome", "NPC"), token=npg_data.get("token", "N"))
+                    
+                    mappa.npg[pos] = npg
+                    npg.imposta_posizione(pos[0], pos[1])
+            except Exception as e:
+                print(f"Errore durante il caricamento dell'NPG in {pos_str}: {e}")
+        
+        # Carica le porte
+        for pos_str, dest_data in data.get("porte", {}).items():
+            try:
+                pos = eval(pos_str)
+                # Converti la lista di destinazione in tupla
+                if isinstance(dest_data, list) and len(dest_data) == 3:
+                    mappa.porte[pos] = (dest_data[0], dest_data[1], dest_data[2])
+            except Exception as e:
+                print(f"Errore durante il caricamento della porta in {pos_str}: {e}")
+        
+        # Carica la posizione iniziale del giocatore
+        if "pos_iniziale_giocatore" in data:
+            mappa.pos_iniziale_giocatore = tuple(data["pos_iniziale_giocatore"])
+        
+        return mappa
