@@ -5,14 +5,10 @@ from entities.entita import Entita, ABILITA_ASSOCIATE
 class NPG(Entita):
     def __init__(self, nome, token="N"):
         # Chiamiamo il costruttore della classe base
-        super().__init__(nome, hp=10, hp_max=10, forza_base=13, difesa=1)
-        
-        # Imposta il token
-        self.token = token
+        super().__init__(nome, hp=10, hp_max=10, forza_base=13, difesa=1, token=token)
         
         # Attributi specifici per NPG
         self.stato_corrente = "default"
-        self.posizione = None
         self.background = ""
         self.professione = ""
         
@@ -463,25 +459,6 @@ class NPG(Entita):
         """
         self.stato_corrente = nuovo_stato
 
-    def imposta_posizione(self, x, y):
-        """
-        Imposta la posizione del personaggio nel mondo di gioco
-        
-        Args:
-            x (int): Coordinata X
-            y (int): Coordinata Y
-        """
-        self.posizione = (x, y)
-
-    def ottieni_posizione(self):
-        """
-        Restituisce la posizione corrente del personaggio
-        
-        Returns:
-            tuple: Coordinate (x, y) o None se non impostata
-        """
-        return self.posizione
-        
     def ottieni_conversazione(self, stato="inizio"):
         """
         Ottiene i dati della conversazione per lo stato specificato
@@ -543,3 +520,80 @@ class NPG(Entita):
             giocatore.aggiungi_oro(quantita)
             return True
         return False
+
+    def to_dict(self):
+        """
+        Converte l'NPG in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dell'NPG in formato dizionario
+        """
+        # Ottieni il dizionario base dalla classe genitore
+        data = super().to_dict()
+        
+        # Aggiungi attributi specifici di NPG
+        data.update({
+            "stato_corrente": self.stato_corrente,
+            "background": self.background,
+            "professione": self.professione,
+            # Le conversazioni non vengono serializzate perché vengono generate dinamicamente
+        })
+        
+        return data
+        
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di NPG da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati dell'NPG
+            
+        Returns:
+            NPG: Nuova istanza di NPG
+        """
+        # Creiamo prima un'istanza di NPG con solo nome e token
+        # evitando di passare hp e altri parametri che vengono gestiti in _inizializza_attributi
+        npg = cls(
+            nome=data.get("nome", "Sconosciuto"),
+            token=data.get("token", "N")
+        )
+        
+        # Impostiamo manualmente gli attributi che sono stati serializzati
+        npg.hp = data.get("hp", 10)
+        npg.hp_max = data.get("hp_max", 10)
+        npg.x = data.get("x", 0)
+        npg.y = data.get("y", 0)
+        npg.mappa_corrente = data.get("mappa_corrente")
+        npg.abilita_competenze = data.get("abilita_competenze", {})
+        npg.bonus_competenza = data.get("bonus_competenza", 2)
+        npg.oro = data.get("oro", 0)
+        npg.esperienza = data.get("esperienza", 0)
+        npg.livello = data.get("livello", 1)
+        npg.difesa = data.get("difesa", 0)
+        
+        # Impostiamo i valori base che sono stati serializzati
+        npg.forza_base = data.get("forza_base", 10)
+        npg.destrezza_base = data.get("destrezza_base", 10)
+        npg.costituzione_base = data.get("costituzione_base", 10)
+        npg.intelligenza_base = data.get("intelligenza_base", 10)
+        npg.saggezza_base = data.get("saggezza_base", 10)
+        npg.carisma_base = data.get("carisma_base", 10)
+        
+        # Ricalcoliamo i modificatori
+        npg.modificatore_forza = npg.calcola_modificatore(npg.forza_base)
+        npg.modificatore_destrezza = npg.calcola_modificatore(npg.destrezza_base)
+        npg.modificatore_costituzione = npg.calcola_modificatore(npg.costituzione_base)
+        npg.modificatore_intelligenza = npg.calcola_modificatore(npg.intelligenza_base)
+        npg.modificatore_saggezza = npg.calcola_modificatore(npg.saggezza_base)
+        npg.modificatore_carisma = npg.calcola_modificatore(npg.carisma_base)
+        
+        # Imposta attributi specifici
+        npg.stato_corrente = data.get("stato_corrente", "default")
+        npg.background = data.get("background", "")
+        npg.professione = data.get("professione", "")
+        
+        # Le conversazioni vengono reinizializzate
+        npg.conversazioni = npg._inizializza_conversazioni()
+        
+        return npg

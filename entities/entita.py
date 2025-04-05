@@ -33,10 +33,11 @@ class Dado:
         return random.randint(1, self.facce)
 
 class Entita:
-    def __init__(self, nome, hp=10, hp_max=10, forza_base=10, difesa=0, destrezza_base=10, costituzione_base=10, intelligenza_base=10, saggezza_base=10, carisma_base=10):
+    def __init__(self, nome, hp=10, hp_max=10, forza_base=10, difesa=0, destrezza_base=10, costituzione_base=10, intelligenza_base=10, saggezza_base=10, carisma_base=10, token="E"):
         self.nome = nome
         self.hp = hp
         self.hp_max = hp_max
+        self.token = token
         
         # Valori base delle caratteristiche
         self.forza_base = forza_base
@@ -53,6 +54,11 @@ class Entita:
         self.modificatore_intelligenza = self.calcola_modificatore(intelligenza_base)
         self.modificatore_saggezza = self.calcola_modificatore(saggezza_base)
         self.modificatore_carisma = self.calcola_modificatore(carisma_base)
+        
+        # Attributi per la posizione
+        self.x = 0
+        self.y = 0
+        self.mappa_corrente = None
         
         # Competenze in abilità
         self.abilita_competenze = {}  # Esempio: {"percezione": True, "persuasione": False}
@@ -91,7 +97,7 @@ class Entita:
     def rimuovi_item(self, nome_item):
         """Rimuove un item dall'inventario"""
         for item in self.inventario:
-            if item.nome == nome_item:
+            if (isinstance(item, str) and item == nome_item) or (hasattr(item, 'nome') and item.nome == nome_item):
                 self.inventario.remove(item)
                 return True
         return False
@@ -214,6 +220,43 @@ class Entita:
     def carisma(self, valore):
         self.modificatore_carisma = valore
 
+    def imposta_posizione(self, mappa_nome_o_x, x_o_y=None, y=None):
+        """
+        Imposta la posizione dell'entità su una mappa specifica o solo le coordinate
+        
+        Supporta due modalità di chiamata:
+        1. imposta_posizione(mappa_nome, x, y) - imposta mappa e coordinate
+        2. imposta_posizione(x, y) - imposta solo le coordinate mantenendo la mappa corrente
+        
+        Args:
+            mappa_nome_o_x: Nome della mappa o coordinata X
+            x_o_y: Coordinata X o Y
+            y: Coordinata Y o None
+        """
+        if y is None:
+            # Vecchia modalità: imposta_posizione(x, y)
+            x = mappa_nome_o_x
+            y = x_o_y
+            # Non modifichiamo mappa_corrente
+        else:
+            # Nuova modalità: imposta_posizione(mappa_nome, x, y)
+            self.mappa_corrente = mappa_nome_o_x
+            x = x_o_y
+        
+        self.x = x
+        self.y = y
+    
+    def ottieni_posizione(self):
+        """
+        Restituisce la posizione corrente dell'entità
+        
+        Returns:
+            tuple: Coordinate (x, y) o None se non impostata
+        """
+        if self.mappa_corrente:
+            return (self.x, self.y)
+        return None
+
     def modificatore_abilita(self, nome_abilita):
         """Calcola il modificatore totale di un'abilità considerando la competenza"""
         caratteristica = ABILITA_ASSOCIATE.get(nome_abilita.lower())
@@ -224,3 +267,74 @@ class Entita:
         modificatore_base = getattr(self, f"modificatore_{caratteristica}", 0)
         competenza_bonus = self.bonus_competenza if self.abilita_competenze.get(nome_abilita.lower()) else 0
         return modificatore_base + competenza_bonus
+
+    def to_dict(self):
+        """
+        Converte l'entità in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dell'entità in formato dizionario
+        """
+        return {
+            "nome": self.nome,
+            "hp": self.hp,
+            "hp_max": self.hp_max,
+            "token": self.token,
+            "forza_base": self.forza_base,
+            "destrezza_base": self.destrezza_base,
+            "costituzione_base": self.costituzione_base,
+            "intelligenza_base": self.intelligenza_base,
+            "saggezza_base": self.saggezza_base,
+            "carisma_base": self.carisma_base,
+            "x": self.x,
+            "y": self.y,
+            "mappa_corrente": self.mappa_corrente,
+            "abilita_competenze": self.abilita_competenze,
+            "bonus_competenza": self.bonus_competenza,
+            "difesa": self.difesa,
+            "inventario": [obj.to_dict() if hasattr(obj, 'to_dict') else (obj if isinstance(obj, str) else obj.nome) for obj in self.inventario],
+            "oro": self.oro,
+            "esperienza": self.esperienza,
+            "livello": self.livello,
+            "arma": self.arma.to_dict() if self.arma and hasattr(self.arma, 'to_dict') else (self.arma if isinstance(self.arma, str) else (self.arma.nome if self.arma else None)),
+            "armatura": self.armatura.to_dict() if self.armatura and hasattr(self.armatura, 'to_dict') else (self.armatura if isinstance(self.armatura, str) else (self.armatura.nome if self.armatura else None)),
+            "accessori": [acc.to_dict() if hasattr(acc, 'to_dict') else (acc if isinstance(acc, str) else acc.nome) for acc in self.accessori],
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di Entita da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati dell'entità
+            
+        Returns:
+            Entita: Nuova istanza di Entita
+        """
+        entita = cls(
+            nome=data.get("nome", "Sconosciuto"),
+            hp=data.get("hp", 10),
+            hp_max=data.get("hp_max", 10),
+            forza_base=data.get("forza_base", 10),
+            difesa=data.get("difesa", 0),
+            destrezza_base=data.get("destrezza_base", 10),
+            costituzione_base=data.get("costituzione_base", 10),
+            intelligenza_base=data.get("intelligenza_base", 10),
+            saggezza_base=data.get("saggezza_base", 10),
+            carisma_base=data.get("carisma_base", 10),
+            token=data.get("token", "E")
+        )
+        
+        entita.x = data.get("x", 0)
+        entita.y = data.get("y", 0)
+        entita.mappa_corrente = data.get("mappa_corrente")
+        entita.abilita_competenze = data.get("abilita_competenze", {})
+        entita.bonus_competenza = data.get("bonus_competenza", 2)
+        entita.oro = data.get("oro", 0)
+        entita.esperienza = data.get("esperienza", 0)
+        entita.livello = data.get("livello", 1)
+        
+        # Gli oggetti più complessi verranno gestiti dalle sottoclassi
+        
+        return entita

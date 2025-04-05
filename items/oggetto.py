@@ -90,8 +90,32 @@ class Oggetto:
             if gioco:
                 gioco.io.mostra_messaggio(f"Hai rimosso l'accessorio {self.nome}.")
     
+    def to_dict(self):
+        """
+        Converte l'oggetto in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dell'oggetto in formato dizionario
+        """
+        return {
+            "nome": self.nome,
+            "tipo": self.tipo,
+            "effetto": self.effetto,
+            "valore": self.valore,
+            "descrizione": self.descrizione
+        }
+    
     @classmethod
-    def da_dizionario(cls, dati):
+    def from_dict(cls, dati):
+        """
+        Crea un'istanza di Oggetto da un dizionario.
+        
+        Args:
+            dati (dict): Dizionario con i dati dell'oggetto
+            
+        Returns:
+            Oggetto: Nuova istanza di Oggetto
+        """
         return cls(
             nome=dati["nome"],
             tipo=dati["tipo"],
@@ -99,5 +123,11 @@ class Oggetto:
             valore=dati.get("valore", 0),
             descrizione=dati.get("descrizione", "")
         )
+        
+    # Metodo di compatibilità con il nome precedente
+    @classmethod 
+    def da_dizionario(cls, dati):
+        """Alias per retrocompatibilità"""
+        return cls.from_dict(dati)
     
     

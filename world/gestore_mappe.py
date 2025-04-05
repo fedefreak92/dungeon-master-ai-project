@@ -354,3 +354,89 @@ class GestitoreMappe:
             info["porta"] = mappa.porte[(x, y)]
             
         return info
+    
+    def salva(self, percorso_file="mappe_salvataggio.json"):
+        """
+        Salva lo stato completo di tutte le mappe e relativi oggetti interattivi.
+        
+        Args:
+            percorso_file (str): Percorso del file dove salvare i dati
+            
+        Returns:
+            bool: True se il salvataggio è avvenuto con successo, False altrimenti
+        """
+        try:
+            # Crea un dizionario con tutte le mappe serializzate
+            mappe_data = {}
+            for nome_mappa, mappa in self.mappe.items():
+                # Utilizziamo il metodo to_dict già esistente nella classe Mappa
+                mappe_data[nome_mappa] = mappa.to_dict()
+            
+            # Aggiungi metadati utili
+            dati_salvataggio = {
+                "mappe": mappe_data,
+                "mappa_attuale": self.mappa_attuale.nome if self.mappa_attuale else None,
+                "versione": "1.0.0",
+                "timestamp": __import__('time').time()
+            }
+            
+            # Salva su file
+            with open(percorso_file, 'w', encoding='utf-8') as f:
+                import json
+                json.dump(dati_salvataggio, f, indent=4, ensure_ascii=False)
+            
+            return True
+        except Exception as e:
+            print(f"Errore durante il salvataggio delle mappe: {e}")
+            return False
+
+    def carica(self, percorso_file="mappe_salvataggio.json"):
+        """
+        Carica lo stato completo di tutte le mappe e relativi oggetti interattivi.
+        
+        Args:
+            percorso_file (str): Percorso del file da cui caricare i dati
+            
+        Returns:
+            bool: True se il caricamento è avvenuto con successo, False altrimenti
+        """
+        try:
+            import json
+            import os
+            
+            # Verifica se il file esiste
+            if not os.path.exists(percorso_file):
+                return False
+            
+            # Carica il file
+            with open(percorso_file, 'r', encoding='utf-8') as f:
+                dati_salvati = json.load(f)
+            
+            # Verifica la versione per compatibilità futura
+            versione = dati_salvati.get("versione", "0.0.0")
+            
+            # Carica le mappe
+            mappe_data = dati_salvati.get("mappe", {})
+            if not mappe_data:
+                return False
+            
+            # Ricrea tutte le mappe dal salvataggio
+            from world.mappa import Mappa
+            self.mappe = {}
+            
+            for nome_mappa, mappa_dict in mappe_data.items():
+                # Utilizziamo il metodo from_dict già esistente nella classe Mappa
+                self.mappe[nome_mappa] = Mappa.from_dict(mappa_dict)
+            
+            # Imposta la mappa attuale
+            mappa_attuale_nome = dati_salvati.get("mappa_attuale")
+            if mappa_attuale_nome and mappa_attuale_nome in self.mappe:
+                self.mappa_attuale = self.mappe[mappa_attuale_nome]
+            elif self.mappe:
+                # Se non c'è una mappa attuale, imposta la prima disponibile
+                self.mappa_attuale = next(iter(self.mappe.values()))
+            
+            return True
+        except Exception as e:
+            print(f"Errore durante il caricamento delle mappe: {e}")
+            return False

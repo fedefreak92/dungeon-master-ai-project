@@ -61,4 +61,7 @@ def mostra_inventario(g, gioco):
         gioco.io.mostra_messaggio("Il tuo inventario è vuoto!")
     else:
         for oggetto in g.inventario:
-            gioco.io.mostra_messaggio(f"- {oggetto}")
+            if isinstance(oggetto, str):
+                gioco.io.mostra_messaggio(f"- {oggetto}")
+            else:
+                gioco.io.mostra_messaggio(f"- {oggetto}")

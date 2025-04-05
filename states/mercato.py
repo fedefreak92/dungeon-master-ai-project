@@ -14,6 +14,11 @@ from core.io_interface import GameIO  # Importazione corretta per l'interfaccia 
 
 class MercatoState(BaseState):
     def __init__(self):
+        # Attributi per gestione asincrona
+        self.fase = "menu_principale"
+        self.ultimo_input = None
+        self.dati_contestuali = {}  # Per memorizzare dati tra più fasi
+        
         # Creiamo NPG specifici del mercato
         self.npg_presenti = {
             "Araldo": NPG("Araldo"),
@@ -145,16 +150,50 @@ class MercatoState(BaseState):
     def esegui(self, gioco):
         # Se è la prima visita al mercato, inizializza la posizione e popola la mappa
         if not hasattr(self, 'prima_visita_completata'):
-            if hasattr(gioco, 'gestore_mappe'):
-                mappa = gioco.gestore_mappe.ottieni_mappa("mercato")
-                if mappa:
-                    gioco.gestore_mappe.imposta_mappa_attuale("mercato")
-                    x, y = mappa.pos_iniziale_giocatore
-                    gioco.giocatore.imposta_posizione("mercato", x, y)
-                    # Popola la mappa con gli oggetti interattivi e gli NPG
-                    gioco.gestore_mappe.trasferisci_oggetti_da_stato("mercato", self)
+            mappa = gioco.gestore_mappe.ottieni_mappa("mercato")
+            if mappa:
+                gioco.gestore_mappe.imposta_mappa_attuale("mercato")
+                x, y = mappa.pos_iniziale_giocatore
+                gioco.giocatore.imposta_posizione("mercato", x, y)
+                # Popola la mappa con gli oggetti interattivi e gli NPG
+                gioco.gestore_mappe.trasferisci_oggetti_da_stato("mercato", self)
             self.prima_visita_completata = True
             
+        # Gestione asincrona basata sulla fase corrente
+        if self.fase == "menu_principale":
+            self._mostra_menu_principale(gioco)
+        elif self.fase == "compra_pozione":
+            self._compra_pozione(gioco)
+        elif self.fase == "vendi_oggetto_lista":
+            self._vendi_oggetto_lista(gioco)
+        elif self.fase == "vendi_oggetto_conferma":
+            self._vendi_oggetto_conferma(gioco)
+        elif self.fase == "parla_npg_lista":
+            self._parla_npg_lista(gioco)
+        elif self.fase == "combatti_npg_lista":
+            self._combatti_npg_lista(gioco)
+        elif self.fase == "combatti_npg_conferma":
+            self._combatti_npg_conferma(gioco)
+        elif self.fase == "esplora_oggetti_lista":
+            self._esplora_oggetti_lista(gioco)
+        elif self.fase == "interagisci_oggetto":
+            self._interagisci_oggetto(gioco)
+        elif self.fase.startswith("prova_abilita"):
+            # Gestione delegata a ProvaAbilitaState
+            gioco.push_stato(ProvaAbilitaState())
+            self.fase = "menu_principale"  # Torna al menu dopo
+        elif self.fase == "visualizza_mappa":
+            self._visualizza_mappa(gioco)
+        elif self.fase == "muovi_mappa":
+            self._muovi_sulla_mappa(gioco)
+        elif self.fase == "interagisci_ambiente":
+            self._interagisci_ambiente(gioco)
+        else:
+            # Fase non riconosciuta, torna al menu principale
+            self.fase = "menu_principale"
+            self.esegui(gioco)
+    
+    def _mostra_menu_principale(self, gioco):
         gioco.io.mostra_messaggio("\n=== MERCATO ===")
         gioco.io.mostra_messaggio("1. Compra pozione (5 oro)")
         gioco.io.mostra_messaggio("2. Vendi oggetto")
@@ -163,236 +202,463 @@ class MercatoState(BaseState):
         gioco.io.mostra_messaggio("5. Gestisci inventario")
         gioco.io.mostra_messaggio("6. Esplora oggetti nel mercato")
         gioco.io.mostra_messaggio("7. Prova abilità")
-        gioco.io.mostra_messaggio("8. Visualizza mappa")  # Nuova opzione
-        gioco.io.mostra_messaggio("9. Muoviti sulla mappa")  # Nuova opzione
-        gioco.io.mostra_messaggio("10. Interagisci con l'ambiente")  # Nuova opzione
+        gioco.io.mostra_messaggio("8. Visualizza mappa")
+        gioco.io.mostra_messaggio("9. Muoviti sulla mappa")
+        gioco.io.mostra_messaggio("10. Interagisci con l'ambiente")
         gioco.io.mostra_messaggio("11. Torna alla taverna")
         
-        scelta = gioco.io.richiedi_input("\nCosa vuoi fare? ")
+        scelta_input = gioco.io.richiedi_input("\nCosa vuoi fare? ")
+        self.ultimo_input = scelta_input
         
+        # Elabora il comando
+        if not scelta_input.isdigit():
+            scelta = self._elabora_comando_mercato(scelta_input)
+        else:
+            scelta = scelta_input
+        
+        # Imposta la fase successiva in base alla scelta
         if scelta == "1":
-            if gioco.giocatore.oro >= 5:
-                gioco.giocatore.oro -= 5
-                gioco.giocatore.aggiungi_item("Pozione")
-                gioco.io.mostra_messaggio("Hai comprato una pozione!")
-            else:
-                gioco.io.mostra_messaggio("Non hai abbastanza oro!")
+            self.fase = "compra_pozione"
         elif scelta == "2":
-            if len(gioco.giocatore.inventario) == 0:
-                gioco.io.mostra_messaggio("Non hai oggetti da vendere!")
-            else:
-                gioco.io.mostra_messaggio("\nI tuoi oggetti:")
-                for i, oggetto in enumerate(gioco.giocatore.inventario, 1):
-                    gioco.io.mostra_messaggio(f"{i}. {oggetto}")
-                try:
-                    idx = int(gioco.io.richiedi_input("\nQuale oggetto vuoi vendere? (0 per annullare) ")) - 1
-                    if 0 <= idx < len(gioco.giocatore.inventario):
-                        oggetto = gioco.giocatore.inventario.pop(idx)
-                        gioco.giocatore.oro += 3
-                        gioco.io.mostra_messaggio(f"Hai venduto {oggetto} per 3 monete d'oro!")
-                except ValueError:
-                    gioco.io.mostra_messaggio("Scelta non valida!")
+            self.fase = "vendi_oggetto_lista"
         elif scelta == "3":
-            self._parla_con_npg(gioco)
+            self.fase = "parla_npg_lista"
         elif scelta == "4":
-            self._combatti_con_npg(gioco)
+            self.fase = "combatti_npg_lista"
         elif scelta == "5":
             gioco.push_stato(GestioneInventarioState())
+            # Rimaniamo nel menu principale al ritorno
         elif scelta == "6":
-            self._esplora_oggetti(gioco)
+            self.fase = "esplora_oggetti_lista"
         elif scelta == "7":
-            gioco.push_stato(ProvaAbilitaState())
+            self.fase = "prova_abilita"
         elif scelta == "8":
-            self._visualizza_mappa(gioco)
+            self.fase = "visualizza_mappa"
         elif scelta == "9":
-            self._muovi_sulla_mappa(gioco)
+            self.fase = "muovi_mappa"
         elif scelta == "10":
-            self._interagisci_ambiente(gioco)
+            self.fase = "interagisci_ambiente"
         elif scelta == "11":
-            gioco.pop_stato()
+            if gioco.stato_corrente():
+                gioco.pop_stato()  # Torna alla taverna
+                return
         else:
-            gioco.io.mostra_messaggio("Scelta non valida!")
+            gioco.io.mostra_messaggio(f"Non capisco cosa vuoi fare con '{scelta_input}'.")
+            avanti(gioco)
+            return
         
+        # Se non abbiamo cambiato stato, esegui subito la prossima fase
+        if self.fase != "menu_principale" and gioco.stato_corrente() == self:
+            self.esegui(gioco)
+    
+    def _elabora_comando_mercato(self, cmd):
+        cmd = cmd.lower().strip()
+        
+        # Mappatura comandi di testo alle azioni
+        if any(x in cmd for x in ["compra", "pozione", "acquista"]):
+            return "1"
+        elif any(x in cmd for x in ["vendi", "vende", "vendere"]):
+            return "2"
+        elif any(x in cmd for x in ["parla", "mercante", "conversare"]):
+            return "3"
+        elif any(x in cmd for x in ["sfida", "combatti", "duello"]):
+            return "4"
+        elif any(x in cmd for x in ["inventario", "zaino", "gestisci"]):
+            return "5"
+        elif any(x in cmd for x in ["esplora", "cerca", "oggetti"]):
+            return "6"
+        elif any(x in cmd for x in ["prova", "abilità", "skill"]):
+            return "7"
+        elif any(x in cmd for x in ["mappa", "visualizza"]):
+            return "8"
+        elif any(x in cmd for x in ["muovi", "movimento", "vai"]):
+            return "9"
+        elif any(x in cmd for x in ["interagisci", "ambiente", "interazione"]):
+            return "10"
+        elif any(x in cmd for x in ["torna", "taverna", "esci"]):
+            return "11"
+        else:
+            return cmd  # ritorna il comando originale se non corrisponde a nessuna azione
+    
+    def _compra_pozione(self, gioco):
+        if gioco.giocatore.oro >= 5:
+            gioco.giocatore.oro -= 5
+            gioco.giocatore.aggiungi_item("Pozione")
+            gioco.io.mostra_messaggio("Hai comprato una pozione!")
+        else:
+            gioco.io.mostra_messaggio("Non hai abbastanza oro!")
+        
+        self.fase = "menu_principale"
         avanti(gioco)
     
-    def _parla_con_npg(self, gioco):
-        # Se abbiamo il gestore mappe, proviamo a usare la posizione
-        if hasattr(gioco, 'gestore_mappe') and gioco.giocatore.mappa_corrente:
+    def _vendi_oggetto_lista(self, gioco):
+        if len(gioco.giocatore.inventario) == 0:
+            gioco.io.mostra_messaggio("Non hai oggetti da vendere!")
+            self.fase = "menu_principale"
+            avanti(gioco)
+            return
+        
+        # Mostra la lista degli oggetti
+        gioco.io.mostra_messaggio("\nI tuoi oggetti:")
+        for i, oggetto in enumerate(gioco.giocatore.inventario, 1):
+            if isinstance(oggetto, str):
+                gioco.io.mostra_messaggio(f"{i}. {oggetto}")
+            else:
+                # Mostra anche il tipo e il valore dell'oggetto se disponibili
+                tipo_str = f" - {oggetto.tipo}" if hasattr(oggetto, 'tipo') else ""
+                valore_str = f" (Valore: {oggetto.valore} oro)" if hasattr(oggetto, 'valore') else ""
+                gioco.io.mostra_messaggio(f"{i}. {oggetto.nome}{tipo_str}{valore_str}")
+        gioco.io.mostra_messaggio(f"0. Torna indietro")
+        
+        idx_input = gioco.io.richiedi_input("\nQuale oggetto vuoi vendere? ")
+        self.ultimo_input = idx_input
+        
+        # Torna al menu se richiesto
+        if idx_input == "0":
+            self.fase = "menu_principale"
+            self.esegui(gioco)
+            return
+            
+        # Trova l'oggetto per nome o indice
+        idx = -1
+        if idx_input.isdigit():
+            idx = int(idx_input) - 1
+        else:
+            # Cerca di trovare l'oggetto per nome
+            nome_oggetto = idx_input.lower().strip()
+            for i, ogg in enumerate(gioco.giocatore.inventario):
+                ogg_nome = ogg.nome.lower() if hasattr(ogg, 'nome') else str(ogg).lower()
+                if nome_oggetto in ogg_nome:
+                    idx = i
+                    break
+        
+        # Controlla se l'oggetto è stato trovato
+        if 0 <= idx < len(gioco.giocatore.inventario):
+            # Memorizza l'indice dell'oggetto nei dati contestuali
+            self.dati_contestuali["idx_oggetto_da_vendere"] = idx
+            self.fase = "vendi_oggetto_conferma"
+            self.esegui(gioco)  # Esegui subito la fase di conferma
+        else:
+            gioco.io.mostra_messaggio("Oggetto non trovato nell'inventario.")
+            self.fase = "menu_principale"
+            avanti(gioco)
+    
+    def _vendi_oggetto_conferma(self, gioco):
+        idx = self.dati_contestuali.get("idx_oggetto_da_vendere", -1)
+        if idx < 0 or idx >= len(gioco.giocatore.inventario):
+            gioco.io.mostra_messaggio("Errore: l'oggetto selezionato non è più disponibile.")
+            self.fase = "menu_principale"
+            avanti(gioco)
+            return
+        
+        oggetto = gioco.giocatore.inventario[idx]
+        
+        # Calcola il prezzo di vendita
+        prezzo_vendita = 3  # Prezzo base
+        if hasattr(oggetto, 'valore'):
+            prezzo_vendita = max(1, oggetto.valore // 2)  # Metà del valore originale
+        
+        gioco.io.mostra_messaggio(f"Stai per vendere {oggetto} per {prezzo_vendita} monete d'oro.")
+        conferma = gioco.io.richiedi_input("Confermi la vendita? (s/n): ")
+        self.ultimo_input = conferma
+        
+        if conferma.lower() == "s":
+            oggetto = gioco.giocatore.inventario.pop(idx)
+            gioco.giocatore.oro += prezzo_vendita
+            gioco.io.mostra_messaggio(f"Hai venduto {oggetto} per {prezzo_vendita} monete d'oro!")
+        else:
+            gioco.io.mostra_messaggio("Vendita annullata.")
+        
+        self.fase = "menu_principale"
+        avanti(gioco)
+    
+    def _parla_npg_lista(self, gioco):
+        # Prima controlla se ci sono NPG sulla mappa
+        npg_vicini = {}
+        if gioco.giocatore.mappa_corrente:
             npg_vicini = gioco.giocatore.ottieni_npg_vicini(gioco.gestore_mappe)
-            if npg_vicini:
-                gioco.io.mostra_messaggio("\nCon chi vuoi parlare?")
-                npg_lista = list(npg_vicini.values())
-                for i, npg in enumerate(npg_lista, 1):
-                    gioco.io.mostra_messaggio(f"{i}. {npg.nome}")
-                gioco.io.mostra_messaggio(f"{len(npg_lista) + 1}. Torna indietro")
-                
-                try:
-                    scelta = int(gioco.io.richiedi_input("\nScegli: "))
-                    if 1 <= scelta <= len(npg_lista):
-                        npg = npg_lista[scelta - 1]
-                        gioco.push_stato(DialogoState(npg))
-                    elif scelta == len(npg_lista) + 1:
-                        return
-                    else:
-                        gioco.io.mostra_messaggio("Scelta non valida.")
-                except ValueError:
-                    gioco.io.mostra_messaggio("Devi inserire un numero.")
-                return
         
-        # Fallback al metodo originale
+        # Se non ci sono NPG sulla mappa, usa quelli definiti nello stato
+        if not npg_vicini:
+            npg_lista = list(self.npg_presenti.values())
+        else:
+            npg_lista = list(npg_vicini.values())
+        
         gioco.io.mostra_messaggio("\nCon chi vuoi parlare?")
-        for i, nome in enumerate(self.npg_presenti.keys(), 1):
-            gioco.io.mostra_messaggio(f"{i}. {nome}")
-        gioco.io.mostra_messaggio(f"{len(self.npg_presenti) + 1}. Torna indietro")
+        for i, npg in enumerate(npg_lista, 1):
+            gioco.io.mostra_messaggio(f"{i}. {npg.nome}")
+        gioco.io.mostra_messaggio(f"0. Torna indietro")
         
+        scelta = gioco.io.richiedi_input("\nScegli: ")
+        self.ultimo_input = scelta
+        
+        if scelta == "0":
+            self.fase = "menu_principale"
+            self.esegui(gioco)
+            return
+            
         try:
-            scelta = int(gioco.io.richiedi_input("\nScegli: "))
-            if 1 <= scelta <= len(self.npg_presenti):
-                npg_nome = list(self.npg_presenti.keys())[scelta - 1]
-                npg = self.npg_presenti[npg_nome]
-                
+            idx = int(scelta) - 1
+            if 0 <= idx < len(npg_lista):
+                npg = npg_lista[idx]
                 # Avvia il dialogo con l'NPG scelto
                 gioco.push_stato(DialogoState(npg))
-            elif scelta == len(self.npg_presenti) + 1:
-                return  # Torna al menu principale
+                # Dopo il dialogo, torna al menu principale
+                self.fase = "menu_principale"
             else:
                 gioco.io.mostra_messaggio("Scelta non valida.")
+                self.fase = "menu_principale"
+                avanti(gioco)
         except ValueError:
             gioco.io.mostra_messaggio("Devi inserire un numero.")
+            self.fase = "menu_principale"
+            avanti(gioco)
     
-    def _combatti_con_npg(self, gioco):
-        # Se abbiamo il gestore mappe, proviamo a usare la posizione
-        if hasattr(gioco, 'gestore_mappe') and gioco.giocatore.mappa_corrente:
+    def _combatti_npg_lista(self, gioco):
+        # Prima controlla se ci sono NPG sulla mappa
+        npg_vicini = {}
+        if gioco.giocatore.mappa_corrente:
             npg_vicini = gioco.giocatore.ottieni_npg_vicini(gioco.gestore_mappe)
-            if npg_vicini:
-                gioco.io.mostra_messaggio("\nCon chi vuoi combattere?")
-                npg_lista = list(npg_vicini.values())
-                for i, npg in enumerate(npg_lista, 1):
-                    gioco.io.mostra_messaggio(f"{i}. {npg.nome}")
-                gioco.io.mostra_messaggio(f"{len(npg_lista) + 1}. Torna indietro")
-                
-                try:
-                    scelta = int(gioco.io.richiedi_input("\nScegli: "))
-                    if 1 <= scelta <= len(npg_lista):
-                        npg = npg_lista[scelta - 1]
-                        
-                        # Conferma prima di attaccare
-                        conferma = gioco.io.richiedi_input(f"Sei sicuro di voler attaccare {npg.nome}? (s/n): ").lower()
-                        if conferma == "s":
-                            from test_state.stati.combattimento import CombattimentoState
-                            gioco.push_stato(CombattimentoState(npg_ostile=npg))
-                        else:
-                            gioco.io.mostra_messaggio("Hai deciso di non combattere.")
-                    elif scelta == len(npg_lista) + 1:
-                        return
-                    else:
-                        gioco.io.mostra_messaggio("Scelta non valida.")
-                except ValueError:
-                    gioco.io.mostra_messaggio("Devi inserire un numero.")
-                return
-                
-        # Fallback al metodo originale
+        
+        # Se non ci sono NPG sulla mappa, usa quelli definiti nello stato
+        if not npg_vicini:
+            npg_lista = list(self.npg_presenti.values())
+        else:
+            npg_lista = list(npg_vicini.values())
+        
         gioco.io.mostra_messaggio("\nCon chi vuoi combattere?")
-        for i, nome in enumerate(self.npg_presenti.keys(), 1):
-            gioco.io.mostra_messaggio(f"{i}. {nome}")
-        gioco.io.mostra_messaggio(f"{len(self.npg_presenti) + 1}. Torna indietro")
+        for i, npg in enumerate(npg_lista, 1):
+            gioco.io.mostra_messaggio(f"{i}. {npg.nome}")
+        gioco.io.mostra_messaggio(f"0. Torna indietro")
         
+        scelta = gioco.io.richiedi_input("\nScegli: ")
+        self.ultimo_input = scelta
+        
+        if scelta == "0":
+            self.fase = "menu_principale"
+            self.esegui(gioco)
+            return
+            
         try:
-            scelta = int(gioco.io.richiedi_input("\nScegli: "))
-            if 1 <= scelta <= len(self.npg_presenti):
-                npg_nome = list(self.npg_presenti.keys())[scelta - 1]
-                npg_ostile = self.npg_presenti[npg_nome]
-                
-                # Conferma prima di attaccare
-                conferma = gioco.io.richiedi_input(f"Sei sicuro di voler attaccare {npg_nome}? (s/n): ").lower()
-                if conferma == "s":
-                    from test_state.stati.combattimento import CombattimentoState
-                    gioco.push_stato(CombattimentoState(npg_ostile=npg_ostile))
-                else:
-                    gioco.io.mostra_messaggio("Hai deciso di non combattere.")
-            elif scelta == len(self.npg_presenti) + 1:
-                return  # Torna al menu principale
+            idx = int(scelta) - 1
+            if 0 <= idx < len(npg_lista):
+                # Memorizza l'NPG scelto nei dati contestuali
+                self.dati_contestuali["npg_combattimento"] = npg_lista[idx]
+                self.fase = "combatti_npg_conferma"
+                self.esegui(gioco)  # Esegui subito la fase di conferma
             else:
                 gioco.io.mostra_messaggio("Scelta non valida.")
+                self.fase = "menu_principale"
+                avanti(gioco)
         except ValueError:
             gioco.io.mostra_messaggio("Devi inserire un numero.")
+            self.fase = "menu_principale"
+            avanti(gioco)
     
-    def _esplora_oggetti(self, gioco):
-        # Se abbiamo il gestore mappe, proviamo a usare la posizione
-        if hasattr(gioco, 'gestore_mappe') and gioco.giocatore.mappa_corrente:
+    def _combatti_npg_conferma(self, gioco):
+        npg = self.dati_contestuali.get("npg_combattimento")
+        if not npg:
+            gioco.io.mostra_messaggio("Errore: l'NPG selezionato non è più disponibile.")
+            self.fase = "menu_principale"
+            avanti(gioco)
+            return
+        
+        gioco.io.mostra_messaggio(f"Sei sicuro di voler attaccare {npg.nome}?")
+        conferma = gioco.io.richiedi_input("Conferma (s/n): ")
+        self.ultimo_input = conferma
+        
+        if conferma.lower() == "s":
+            from states.combattimento import CombattimentoState
+            gioco.push_stato(CombattimentoState(npg_ostile=npg))
+            # Dopo il combattimento, torna al menu principale
+            self.fase = "menu_principale"
+        else:
+            gioco.io.mostra_messaggio("Hai deciso di non combattere.")
+            self.fase = "menu_principale"
+            avanti(gioco)
+    
+    def _esplora_oggetti_lista(self, gioco):
+        # Prima controlla se ci sono oggetti sulla mappa
+        oggetti_vicini = {}
+        if gioco.giocatore.mappa_corrente:
             oggetti_vicini = gioco.giocatore.ottieni_oggetti_vicini(gioco.gestore_mappe)
-            if oggetti_vicini:
-                gioco.io.mostra_messaggio("\nOggetti nelle vicinanze:")
-                oggetti_lista = []
-                for pos, obj in oggetti_vicini.items():
-                    oggetti_lista.append((pos, obj))
-                    x, y = pos
-                    gioco.io.mostra_messaggio(f"{len(oggetti_lista)}. {obj.nome} [{obj.stato}] a ({x}, {y})")
-                gioco.io.mostra_messaggio(f"{len(oggetti_lista) + 1}. Torna indietro")
-                
-                try:
-                    scelta = int(gioco.io.richiedi_input("\nCon quale oggetto vuoi interagire? "))
-                    if 1 <= scelta <= len(oggetti_lista):
-                        _, oggetto = oggetti_lista[scelta - 1]
-                        oggetto.descrivi()
-                        oggetto.interagisci(gioco.giocatore)
-                    elif scelta == len(oggetti_lista) + 1:
-                        return
-                    else:
-                        gioco.io.mostra_messaggio("Scelta non valida.")
-                except ValueError:
-                    gioco.io.mostra_messaggio("Devi inserire un numero.")
-                return
-                
-        # Fallback al metodo originale
-        gioco.io.mostra_messaggio("\nOggetti nel mercato:")
-        for i, nome in enumerate(self.oggetti_interattivi.keys(), 1):
-            oggetto = self.oggetti_interattivi[nome]
-            gioco.io.mostra_messaggio(f"{i}. {oggetto.nome} [{oggetto.stato}]")
-        gioco.io.mostra_messaggio(f"{len(self.oggetti_interattivi) + 1}. Torna indietro")
         
+        # Prepara la lista degli oggetti da mostrare
+        if not oggetti_vicini:
+            # Usa gli oggetti definiti nello stato
+            gioco.io.mostra_messaggio("\nOggetti nel mercato:")
+            oggetti_lista = []
+            for nome, obj in self.oggetti_interattivi.items():
+                oggetti_lista.append(obj)
+                gioco.io.mostra_messaggio(f"{len(oggetti_lista)}. {obj.nome} [{obj.stato}]")
+        else:
+            # Usa gli oggetti sulla mappa
+            gioco.io.mostra_messaggio("\nOggetti nelle vicinanze:")
+            oggetti_lista = []
+            for pos, obj in oggetti_vicini.items():
+                oggetti_lista.append(obj)
+                x, y = pos
+                gioco.io.mostra_messaggio(f"{len(oggetti_lista)}. {obj.nome} [{obj.stato}] a ({x}, {y})")
+        
+        gioco.io.mostra_messaggio(f"0. Torna indietro")
+        
+        scelta = gioco.io.richiedi_input("\nCon quale oggetto vuoi interagire? ")
+        self.ultimo_input = scelta
+        
+        if scelta == "0":
+            self.fase = "menu_principale"
+            self.esegui(gioco)
+            return
+            
         try:
-            scelta = int(gioco.io.richiedi_input("\nCon quale oggetto vuoi interagire? "))
-            if 1 <= scelta <= len(self.oggetti_interattivi):
-                oggetto_nome = list(self.oggetti_interattivi.keys())[scelta - 1]
-                oggetto = self.oggetti_interattivi[oggetto_nome]
-                oggetto.descrivi()
-                oggetto.interagisci(gioco.giocatore)
-            elif scelta == len(self.oggetti_interattivi) + 1:
-                return
+            idx = int(scelta) - 1
+            if 0 <= idx < len(oggetti_lista):
+                oggetto = oggetti_lista[idx]
+                self.dati_contestuali["oggetto_interazione"] = oggetto
+                self.fase = "interagisci_oggetto"
+                self.esegui(gioco)
             else:
                 gioco.io.mostra_messaggio("Scelta non valida.")
+                self.fase = "menu_principale"
+                avanti(gioco)
         except ValueError:
             gioco.io.mostra_messaggio("Devi inserire un numero.")
-    
-    def _visualizza_mappa(self, gioco):
-        """Apre lo stato mappa"""
-        if not hasattr(gioco, 'gestore_mappe'):
-            gioco.io.mostra_messaggio("Sistema mappa non ancora implementato!")
+            self.fase = "menu_principale"
             avanti(gioco)
-            return
-        
-        # Importiamo localmente per evitare dipendenze circolari
-        from test_state.stati.mappa_state import MappaState
-        gioco.push_stato(MappaState(stato_origine=self))
     
-    def _muovi_sulla_mappa(self, gioco):
-        """Permette al giocatore di muoversi sulla mappa"""
-        if not hasattr(gioco, 'gestore_mappe') or not gioco.giocatore.mappa_corrente:
-            gioco.io.mostra_messaggio("Sistema di movimento non disponibile!")
-            avanti(gioco)
-            return
-        
-        from test_state.stati.mappa_state import MappaState
-        gioco.push_stato(MappaState(stato_origine=self))
-    
-    def _interagisci_ambiente(self, gioco):
-        """Permette al giocatore di interagire con l'ambiente circostante"""
-        if not hasattr(gioco, 'gestore_mappe') or not gioco.giocatore.mappa_corrente:
-            gioco.io.mostra_messaggio("Sistema di interazione non disponibile!")
+    def _interagisci_oggetto(self, gioco):
+        oggetto = self.dati_contestuali.get("oggetto_interazione")
+        if not oggetto:
+            gioco.io.mostra_messaggio("Errore: l'oggetto selezionato non è più disponibile.")
+            self.fase = "menu_principale"
             avanti(gioco)
             return
             
-        # Usa direttamente lo stato mappa
-        from test_state.stati.mappa_state import MappaState
-        gioco.push_stato(MappaState(stato_origine=self))
+        oggetto.descrivi()
+        oggetto.interagisci(gioco.giocatore)
+        
+        self.fase = "menu_principale"
+        avanti(gioco)
+    
+    def _visualizza_mappa(self, gioco):
+        """Visualizza la mappa del mercato"""
+        from states.mappa_state import MappaState
+        
+        # Se c'è già un'istanza del map state, la usiamo
+        map_state = next((s for s in gioco.stato_stack if isinstance(s, MappaState)), None)
+        if map_state:
+            map_state.esegui(gioco)
+        else:
+            gioco.push_stato(MappaState(stato_origine=self))
+        
+        # Dopo aver visualizzato la mappa, torneremo al menu principale
+        self.fase = "menu_principale"
+    
+    def _muovi_sulla_mappa(self, gioco):
+        """Permette al giocatore di muoversi sulla mappa"""
+        from states.mappa_state import MappaState
+        
+        if not gioco.giocatore.mappa_corrente:
+            gioco.io.mostra_messaggio("Sistema di movimento non disponibile!")
+            self.fase = "menu_principale"
+            avanti(gioco)
+            return
+        
+        # Se c'è già un'istanza del map state, la usiamo
+        map_state = next((s for s in gioco.stato_stack if isinstance(s, MappaState)), None)
+        if map_state:
+            map_state.esegui(gioco)
+        else:
+            gioco.push_stato(MappaState(stato_origine=self))
+        
+        # Dopo il movimento, torneremo al menu principale
+        self.fase = "menu_principale"
+    
+    def _interagisci_ambiente(self, gioco):
+        """Permette al giocatore di interagire con l'ambiente circostante"""
+        from states.mappa_state import MappaState
+        
+        if not gioco.giocatore.mappa_corrente:
+            gioco.io.mostra_messaggio("Sistema di interazione non disponibile!")
+            self.fase = "menu_principale"
+            avanti(gioco)
+            return
+        
+        # Se c'è già un'istanza del map state, la usiamo
+        map_state = next((s for s in gioco.stato_stack if isinstance(s, MappaState)), None)
+        if map_state:
+            map_state.esegui(gioco)
+        else:
+            gioco.push_stato(MappaState(stato_origine=self))
+        
+        # Dopo l'interazione, torneremo al menu principale
+        self.fase = "menu_principale"
+    
+    def to_dict(self):
+        """
+        Converte lo stato del mercato in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dello stato in formato dizionario
+        """
+        # Ottieni il dizionario base
+        data = super().to_dict()
+        
+        # Aggiungi attributi specifici
+        data.update({
+            "fase": self.fase,
+            "ultimo_input": self.ultimo_input,
+            # Non serializzare mercanti, scorte, oggetti_interattivi poiché sono generati dinamicamente
+        })
+        
+        return data
+    
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di MercatoState da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati dello stato
+            
+        Returns:
+            MercatoState: Nuova istanza di MercatoState
+        """
+        state = cls()
+        
+        # Ripristina attributi
+        state.fase = data.get("fase", "menu_principale")
+        state.ultimo_input = data.get("ultimo_input")
+        
+        # I mercanti, scorte e oggetti_interattivi vengono generati dal costruttore
+        
+        return state
+        
+    def __getstate__(self):
+        """
+        Metodo speciale per la serializzazione con pickle.
+        
+        Returns:
+            dict: Stato serializzabile dell'oggetto
+        """
+        state = self.__dict__.copy()
+        
+        # Rimuovi eventuali riferimenti ciclici o non serializzabili
+        if 'dati_contestuali' in state:
+            # Filtra solo i dati serializzabili
+            dati_contestuali_safe = {}
+            for k, v in state['dati_contestuali'].items():
+                if isinstance(v, (str, int, float, bool, list, dict, tuple)):
+                    dati_contestuali_safe[k] = v
+            state['dati_contestuali'] = dati_contestuali_safe
+        
+        return state
+    
+    def __setstate__(self, state):
+        """
+        Metodo speciale per la deserializzazione con pickle.
+        
+        Args:
+            state (dict): Stato dell'oggetto da ripristinare
+        """
+        self.__dict__.update(state)

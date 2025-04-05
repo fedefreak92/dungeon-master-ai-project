@@ -29,6 +29,44 @@ class OggettoInterattivo:
         self.messaggi_interazione = {}  # Feedback narrativi per interazioni
         self.eventi = {}  # Eventi da attivare al cambiamento di stato
     
+    def __getstate__(self):
+        """
+        Prepara l'oggetto per la serializzazione con pickle.
+        
+        Returns:
+            dict: Stato dell'oggetto da serializzare
+        """
+        # Crea una copia del dizionario dello stato
+        state = self.__dict__.copy()
+        
+        # Rimuove attributi non serializzabili (come funzioni)
+        if 'eventi' in state:
+            del state['eventi']
+        
+        # Rimuove altri elementi non serializzabili
+        non_serializzabili = []
+        for key, value in state.items():
+            if callable(value) or key.startswith('__'):
+                non_serializzabili.append(key)
+        
+        for key in non_serializzabili:
+            del state[key]
+        
+        return state
+
+    def __setstate__(self, state):
+        """
+        Ripristina lo stato dell'oggetto dopo la deserializzazione.
+        
+        Args:
+            state: Stato deserializzato da ripristinare
+        """
+        # Inizializza eventi vuoti
+        state['eventi'] = {}
+        
+        # Aggiorna lo stato dell'oggetto
+        self.__dict__.update(state)
+    
     def interagisci(self, giocatore, gioco=None):
         """
         Metodo principale di interazione. Dovrebbe essere sovrascritto nelle sottoclassi.
@@ -141,6 +179,72 @@ class OggettoInterattivo:
             self.eventi[stato] = []
         
         self.eventi[stato].append(evento)
+        
+    def to_dict(self):
+        """
+        Converte l'oggetto interattivo in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dell'oggetto in formato dizionario
+        """
+        # Serializza solo gli attributi fondamentali
+        return {
+            "nome": self.nome,
+            "descrizione": self.descrizione,
+            "stato": self.stato,
+            "contenuto": [obj.to_dict() if hasattr(obj, 'to_dict') else obj.nome for obj in self.contenuto],
+            "posizione": self.posizione,
+            "token": self.token,
+            "descrizioni_stati": self.descrizioni_stati,
+            "stati_possibili": self.stati_possibili,
+            "abilita_richieste": self.abilita_richieste,
+            "difficolta_abilita": self.difficolta_abilita,
+            "messaggi_interazione": self.messaggi_interazione,
+            # Gli eventi non sono serializzabili direttamente
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di OggettoInterattivo da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati dell'oggetto
+            
+        Returns:
+            OggettoInterattivo: Nuova istanza di OggettoInterattivo
+        """
+        from items.oggetto import Oggetto
+        
+        oggetto = cls(
+            nome=data.get("nome", ""),
+            descrizione=data.get("descrizione", ""),
+            stato=data.get("stato", "chiuso"),
+            posizione=data.get("posizione"),
+            token=data.get("token", "O")
+        )
+        
+        # Impostazione del contenuto
+        contenuto_raw = data.get("contenuto", [])
+        contenuto = []
+        
+        for item in contenuto_raw:
+            if isinstance(item, dict):
+                contenuto.append(Oggetto.from_dict(item))
+            elif isinstance(item, str):
+                # Crea un oggetto generico se solo il nome è disponibile
+                contenuto.append(Oggetto(item, "comune"))
+        
+        oggetto.contenuto = contenuto
+        
+        # Caricamento delle altre proprietà
+        oggetto.descrizioni_stati = data.get("descrizioni_stati", {oggetto.stato: oggetto.descrizione})
+        oggetto.stati_possibili = data.get("stati_possibili", {})
+        oggetto.abilita_richieste = data.get("abilita_richieste", {})
+        oggetto.difficolta_abilita = data.get("difficolta_abilita", {})
+        oggetto.messaggi_interazione = data.get("messaggi_interazione", {})
+        
+        return oggetto
 
 
 class Baule(OggettoInterattivo):
