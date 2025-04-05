@@ -29,12 +29,21 @@ Each game phase (map exploration, combat, dialogues, inventory management) is ha
 
 ## 🚧 Current Objective
 
-We are currently in:
 
-**Phase 1 – Migration & Refactor**
-- ✅ Transitioning all maps and areas (like Taverna, Mercato) to the unified `MappaStateEnhanced`
-- ✅ Refactoring all content creation to use `EntityFactory`
-- 🔄 Removing legacy states like `TavernaState` and `MercatoState` once validated
+📅 Roadmap
+ Unified map exploration with MappaStateEnhanced
+
+ Centralized NPC/object generation via EntityFactory
+
+ Remove legacy states (TavernaState, MercatoState)
+
+ Add modular I/O interfaces (text, GUI, AI)
+
+ Implement AI Dungeon Master using GPT API
+
+ Web-based frontend (Flask + HTMX or similar)
+
+
 
 ## 🧠 Future Vision: Dungeon Master AI
 
