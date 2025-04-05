@@ -1,5 +1,9 @@
 # 🧠 Dungeon Master AI – Python RPG Engine (Backend Only)
 
+
+![Descrizione immagine](Image.png)
+
+
 This repository contains the **backend core** of a modular role-playing game (RPG) engine built in **Python**, featuring a clean object-oriented architecture and a **stack-based finite state machine (FSM)**. The goal is to evolve into a GPT-powered, narrative-driven RPG system where an AI Dungeon Master enhances immersion through dynamic interactions.
 
 ---
