@@ -7,12 +7,19 @@ This repository contains the **backend core** of a modular role-playing game (RP
 The project is organized into well-defined modules:
 
 gioco_rpg/
+
 ├── main.py # Entry point 
+
 ├── core/ # Game loop and I/O interface 
+
 ├── entities/ # Player, NPCs, enemies, shared logic 
+
 ├── items/ # Objects and interactive elements 
+
 ├── states/ # Game states (map, combat, inventory, etc.) 
+
 ├── util/ # Dice rolling, helper functions 
+
 └── world/ # Map system, tile control, environment
 
 
