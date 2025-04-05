@@ -31,6 +31,8 @@ Each game phase (map exploration, combat, dialogues, inventory management) is ha
 
 
 📅 Roadmap
+
+
  Unified map exploration with MappaStateEnhanced
 
  Centralized NPC/object generation via EntityFactory
