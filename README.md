@@ -53,9 +53,6 @@ Each phase of the game (exploration, dialogue, combat, inventory) is handled via
 
 ## 📅 Roadmap
 
-✅ Unified map system (`MappaStateEnhanced`)  
-✅ Centralized dynamic generation via `EntityFactory`  
-⬜ Remove legacy states (`TavernaState`, `MercatoState`)  
 ⬜ Add modular I/O interfaces (GUI, AI)  
 ⬜ Implement **AI Dungeon Master** (GPT-based)  
 ⬜ Create web-based frontend (Flask + HTMX)
