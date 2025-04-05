@@ -261,30 +261,30 @@ class GestitoreMappe:
         """
         if not self.mappa_attuale:
             return False
-            
+
         nuovo_x = giocatore.x + dx
         nuovo_y = giocatore.y + dy
-        
+
         # Verifica se il movimento è possibile
         if self.mappa_attuale.is_posizione_valida(nuovo_x, nuovo_y):
-            # Controlla se c'è una porta
-            destinazione = self.mappa_attuale.ottieni_porta_a(nuovo_x, nuovo_y)
-            if destinazione:
+            if destinazione := self.mappa_attuale.ottieni_porta_a(
+                nuovo_x, nuovo_y
+            ):
                 # Cambia mappa
                 mappa_dest, x_dest, y_dest = destinazione
                 self.cambia_mappa_giocatore(giocatore, mappa_dest, x_dest, y_dest)
                 return True
-                
+
             # Verifica se c'è un oggetto o NPG
             if (nuovo_x, nuovo_y) in self.mappa_attuale.oggetti or (nuovo_x, nuovo_y) in self.mappa_attuale.npg:
                 # Non permettere di muoversi sopra oggetti o NPG
                 return False
-                
+
             # Movimento valido
             giocatore.x = nuovo_x
             giocatore.y = nuovo_y
             return True
-            
+
         return False
         
     def cambia_mappa_giocatore(self, giocatore, nome_mappa, x=None, y=None):

@@ -15,7 +15,7 @@ def main():
     # Crea un oggetto temporaneo per l'I/O iniziale
     io_temp = TerminalIO()
     io_temp.mostra_messaggio("Benvenuto avventuriero!")
-    
+
     # Mostra menu iniziale
     io_temp.mostra_messaggio("1. Nuova Partita")
     io_temp.mostra_messaggio("2. Carica Partita")
@@ -24,7 +24,7 @@ def main():
     if scelta == "2":
         # Crea un gioco temporaneo solo per il caricamento
         gioco_temp = Game(None, None)
-        
+
         if gioco_temp.carica():
             # Se il caricamento è riuscito, crea il gioco vero con lo stato iniziale
             gioco = Game(gioco_temp.giocatore, TavernaState())
@@ -33,24 +33,33 @@ def main():
         else:
             # Se il caricamento fallisce, crea una nuova partita
             io_temp.mostra_messaggio("Creazione di una nuova partita...")
-            nome = io_temp.richiedi_input("Come ti chiami? ")
-            classe = io_temp.richiedi_input("Che classe sei? Es. guerriero o mago o ladro").lower()
-            giocatore = Giocatore(nome, classe)
-            gioco = Game(giocatore, TavernaState())
+            gioco = crea_nuova_partita(io_temp)
     else:
-        # Chiedi input iniziale
-        nome = io_temp.richiedi_input("Come ti chiami? ")
-        classe = io_temp.richiedi_input("Che classe sei? Es. guerriero o mago o ladro").lower()
-        giocatore = Giocatore(nome, classe)
-        
-        # Crea il gioco con il giocatore
-        gioco = Game(giocatore, TavernaState())
-    
+        gioco = crea_nuova_partita(io_temp)
     gioco.esegui()
-    
+
     # Fine del gioco
     gioco.io.mostra_messaggio("\n=== Fine dello spettacolo! ===")
     avanti(gioco)
+
+
+# TODO Rename this here and in `main`
+def crea_nuova_partita(io_temp):
+    """Creates a new game.
+
+    Prompts the player for their name and class, creates a new player character,
+    and initializes the game with the TavernaState.
+
+    Args:
+        io_temp: A temporary IO object for initial input.
+
+    Returns:
+        A new Game object.
+    """
+    nome = io_temp.richiedi_input("Come ti chiami? ")
+    classe = io_temp.richiedi_input("Che classe sei? Es. guerriero o mago o ladro").lower()
+    giocatore = Giocatore(nome, classe)
+    return Game(giocatore, TavernaState())
 
 if __name__ == "__main__":
     main()

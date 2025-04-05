@@ -1,3 +1,4 @@
+import itertools
 from world.mappa import Mappa
 from world.gestore_mappe import GestitoreMappe
 from entities.giocatore import Giocatore
@@ -57,23 +58,19 @@ class ControllerMappa:
         mappa = self.gestore_mappe.ottieni_mappa(self.giocatore.mappa_corrente)
         if not mappa:
             return None, None
-        
+
         # Controlla in tutte le direzioni adiacenti
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
             x, y = self.giocatore.x + dx, self.giocatore.y + dy
-            
-            # Controlla se c'è un oggetto
-            oggetto = mappa.ottieni_oggetto_a(x, y)
-            if oggetto:
+
+            if oggetto := mappa.ottieni_oggetto_a(x, y):
                 self.oggetto_selezionato = oggetto
                 return "oggetto", oggetto
-            
-            # Controlla se c'è un NPG
-            npg = mappa.ottieni_npg_a(x, y)
-            if npg:
+
+            if npg := mappa.ottieni_npg_a(x, y):
                 self.npg_selezionato = npg
                 return "npg", npg
-        
+
         return None, None
     
     def ottieni_elementi_mappa(self):
@@ -85,27 +82,26 @@ class ControllerMappa:
         """
         if not self.gestore_mappe.mappa_attuale:
             return {}
-            
+
         mappa = self.gestore_mappe.mappa_attuale
-        
+
         elementi = {
             "muri": [],
             "oggetti": {},
             "npg": {},
             "porte": {}
         }
-        
+
         # Aggiungi i muri
-        for y in range(mappa.altezza):
-            for x in range(mappa.larghezza):
-                if mappa.griglia[y][x] == 1:
-                    elementi["muri"].append((x, y))
-        
+        for y, x in itertools.product(range(mappa.altezza), range(mappa.larghezza)):
+            if mappa.griglia[y][x] == 1:
+                elementi["muri"].append((x, y))
+
         # Aggiungi oggetti e NPG
         elementi["oggetti"] = mappa.oggetti
         elementi["npg"] = mappa.npg
         elementi["porte"] = mappa.porte
-        
+
         return elementi
     
     def ottieni_oggetti_vicini(self, raggio=1):
@@ -130,11 +126,12 @@ class ControllerMappa:
         Returns:
             dict: Dizionario con gli NPG vicini
         """
-        mappa = self.gestore_mappe.ottieni_mappa(self.giocatore.mappa_corrente)
-        if not mappa:
+        if mappa := self.gestore_mappe.ottieni_mappa(
+            self.giocatore.mappa_corrente
+        ):
+            return mappa.ottieni_npg_vicini(self.giocatore.x, self.giocatore.y, raggio)
+        else:
             return {}
-        
-        return mappa.ottieni_npg_vicini(self.giocatore.x, self.giocatore.y, raggio)
     
     def esegui_interazione_oggetto(self):
         """

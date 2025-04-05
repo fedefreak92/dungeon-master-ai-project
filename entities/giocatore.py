@@ -66,50 +66,62 @@ class Giocatore(Entita):
         # Oggetti comuni per tutti
         pozione = Oggetto("Pozione di cura", "cura", {"cura": 10}, 5, "Ripristina 10 punti vita")
         chiave = Oggetto("Chiave comune", "chiave", {}, 1, "Una chiave semplice che potrebbe aprire porte o forzieri")
-        
+
         # Armi base per tutte le classi
         arma_base = None
         armatura_base = None
-        
+
         if self.classe == "guerriero":
             arma_base = Oggetto("Spada corta", "arma", {"forza": 3}, 15, "Una spada corta ma robusta")
             armatura_base = Oggetto("Cotta di maglia", "armatura", {"difesa": 3}, 25, "Una cotta di maglia che offre buona protezione")
-            
+
         elif self.classe == "mago":
             arma_base = Oggetto("Bastone arcano", "arma", {"forza": 1, "intelligenza": 2}, 20, "Un bastone che amplifica i poteri magici")
             armatura_base = Oggetto("Veste da mago", "armatura", {"difesa": 1, "intelligenza": 1}, 15, "Una veste leggera con proprietà magiche")
-            
+
         elif self.classe == "ladro":
             arma_base = Oggetto("Pugnale", "arma", {"forza": 2, "destrezza": 1}, 12, "Un pugnale affilato e maneggevole")
             armatura_base = Oggetto("Armatura di cuoio", "armatura", {"difesa": 2, "destrezza": 1}, 18, "Un'armatura leggera che non limita i movimenti")
-            
+
         else:
             arma_base = Oggetto("Bastone da viaggio", "arma", {"forza": 1}, 5, "Un semplice bastone di legno")
             armatura_base = Oggetto("Abiti robusti", "armatura", {"difesa": 1}, 5, "Vestiti rinforzati che offrono minima protezione")
-            
+
         # Aggiunta degli oggetti all'inventario
         self.inventario.append(pozione)
         self.inventario.append(chiave)
         self.inventario.append(arma_base)
         self.inventario.append(armatura_base)
-        
+
         # Equipaggia automaticamente arma e armatura base
         arma_base.equipaggia(self)
         armatura_base.equipaggia(self)
-        
+
         # Aggiungi un accessorio base in base alla classe
         if self.classe == "guerriero":
-            amuleto = Oggetto("Amuleto della forza", "accessorio", {"forza": 1}, 10, "Un amuleto che aumenta la forza")
-            self.inventario.append(amuleto)
-            amuleto.equipaggia(self)
+            self.add_to_inventory(
+                "Amuleto della forza", "forza", "Un amuleto che aumenta la forza"
+            )
         elif self.classe == "mago":
-            anello = Oggetto("Anello della mente", "accessorio", {"intelligenza": 1}, 10, "Un anello che migliora la concentrazione")
-            self.inventario.append(anello)
-            anello.equipaggia(self)
+            self.add_to_inventory(
+                "Anello della mente",
+                "intelligenza",
+                "Un anello che migliora la concentrazione",
+            )
         elif self.classe == "ladro":
-            guanti = Oggetto("Guanti del ladro", "accessorio", {"destrezza": 1}, 10, "Guanti che migliorano la manualità")
-            self.inventario.append(guanti)
-            guanti.equipaggia(self)
+            self.add_to_inventory(
+                "Guanti del ladro",
+                "destrezza",
+                "Guanti che migliorano la manualità",
+            )
+            
+            
+    def add_to_inventory(self, accessorio, arg1, arg2):
+        #TODO add argument names for arg1 and arg2
+        """Aggiunge un accessorio all'inventario e lo equipaggia"""
+        amuleto = Oggetto(accessorio, "accessorio", {arg1: 1}, 10, arg2)
+        self.inventario.append(amuleto)
+        amuleto.equipaggia(self)
     
     def attacca(self, nemico):
         # Utilizziamo prima l'implementazione di base da Entita
@@ -170,9 +182,7 @@ class Giocatore(Entita):
         Returns:
             tuple: Coordinate (x, y) o None se non impostata
         """
-        if self.mappa_corrente:
-            return (self.x, self.y)
-        return None
+        return (self.x, self.y) if self.mappa_corrente else None
     
     def interagisci_con_oggetto_adiacente(self, gestore_mappe):
         """
@@ -186,20 +196,19 @@ class Giocatore(Entita):
         """
         if not gestore_mappe or not self.mappa_corrente:
             return False
-        
+
         mappa = gestore_mappe.ottieni_mappa(self.mappa_corrente)
         if not mappa:
             return False
-        
+
         # Controlla in tutte le direzioni adiacenti
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
             x, y = self.x + dx, self.y + dy
-            oggetto = mappa.ottieni_oggetto_a(x, y)
-            if oggetto:
+            if oggetto := mappa.ottieni_oggetto_a(x, y):
                 io.mostra_messaggio(f"Interagisci con {oggetto.nome}")
                 oggetto.interagisci(self)
                 return True
-            
+
         io.mostra_messaggio("Non ci sono oggetti con cui interagire nelle vicinanze.")
         return False
     
@@ -216,21 +225,23 @@ class Giocatore(Entita):
         """
         if not gestore_mappe or not self.mappa_corrente:
             return False
-        
+
         mappa = gestore_mappe.ottieni_mappa(self.mappa_corrente)
         if not mappa:
             return False
-        
+
         # Controlla in tutte le direzioni adiacenti
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
             x, y = self.x + dx, self.y + dy
-            npg = mappa.ottieni_npg_a(x, y)
-            if npg:
+            if npg := mappa.ottieni_npg_a(x, y):
                 io.mostra_messaggio(f"Parli con {npg.nome}")
+                #Don't import test modules.
+                #Tests should be self-contained and don't depend on each other.
+                # sourcery skip: dont-import-test-modules
                 from test_state.stati.dialogo import DialogoState
                 gioco.push_stato(DialogoState(npg))
                 return True
-            
+
         io.mostra_messaggio("Non ci sono personaggi con cui parlare nelle vicinanze.")
         return False
     
@@ -247,12 +258,11 @@ class Giocatore(Entita):
         """
         if not gestore_mappe or not self.mappa_corrente:
             return {}
-        
-        mappa = gestore_mappe.ottieni_mappa(self.mappa_corrente)
-        if not mappa:
+
+        if mappa := gestore_mappe.ottieni_mappa(self.mappa_corrente):
+            return mappa.ottieni_oggetti_vicini(self.x, self.y, raggio)
+        else:
             return {}
-        
-        return mappa.ottieni_oggetti_vicini(self.x, self.y, raggio)
     
     def ottieni_npg_vicini(self, gestore_mappe, raggio=1):
         """
@@ -267,9 +277,6 @@ class Giocatore(Entita):
         """
         if not gestore_mappe or not self.mappa_corrente:
             return {}
-        
+
         mappa = gestore_mappe.ottieni_mappa(self.mappa_corrente)
-        if not mappa:
-            return {}
-        
-        return mappa.ottieni_npg_vicini(self.x, self.y, raggio)
+        return mappa.ottieni_npg_vicini(self.x, self.y, raggio) if mappa else {}

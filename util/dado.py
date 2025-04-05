@@ -49,19 +49,17 @@ def tira_dadi(formula):
     else:
         formula_dadi = formula
         modificatore = 0
-    
-    # Estrai il numero e il tipo di dadi
-    if "d" in formula_dadi:
-        num_dadi, facce = formula_dadi.split("d")
-        num_dadi = int(num_dadi) if num_dadi else 1
-        facce = int(facce)
-    else:
+
+    if "d" not in formula_dadi:
         # Se non c'è 'd', assumiamo sia solo un numero
         return int(formula_dadi) + modificatore, [], modificatore
-    
+
+    num_dadi, facce = formula_dadi.split("d")
+    num_dadi = int(num_dadi) if num_dadi else 1
+    facce = int(facce)
     # Esegui i tiri
     dado = Dado(facce)
     tiri = dado.tiri_multipli(num_dadi)
     risultato_totale = sum(tiri) + modificatore
-    
+
     return risultato_totale, tiri, modificatore

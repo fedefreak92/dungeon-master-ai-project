@@ -34,8 +34,7 @@ class Game:
         Args:
             mappa_nome (str): Nome della mappa iniziale (default: "taverna")
         """
-        mappa = self.gestore_mappe.ottieni_mappa(mappa_nome)
-        if mappa:
+        if mappa := self.gestore_mappe.ottieni_mappa(mappa_nome):
             self.gestore_mappe.imposta_mappa_attuale(mappa_nome)
             x, y = mappa.pos_iniziale_giocatore
             self.giocatore.imposta_posizione(mappa_nome, x, y)
@@ -164,7 +163,7 @@ class Game:
             trappola_id (str): Identificatore della trappola
             danno (int): Quantità di danno da infliggere
         """
-        self.io.mostra_messaggio(f"Una trappola si attiva!")
+        self.io.mostra_messaggio("Una trappola si attiva!")
         if danno > 0:
             self.giocatore.subisci_danno(danno)
         
@@ -188,18 +187,19 @@ class Game:
         """
         if not self.giocatore.mappa_corrente:
             return None
-            
-        mappa = self.gestore_mappe.ottieni_mappa(self.giocatore.mappa_corrente)
-        if not mappa:
+
+        if mappa := self.gestore_mappe.ottieni_mappa(
+            self.giocatore.mappa_corrente
+        ):
+            return {
+                "mappa": self.giocatore.mappa_corrente,
+                "x": self.giocatore.x,
+                "y": self.giocatore.y,
+                "oggetti_vicini": self.giocatore.ottieni_oggetti_vicini(self.gestore_mappe),
+                "npg_vicini": self.giocatore.ottieni_npg_vicini(self.gestore_mappe)
+            }
+        else:
             return None
-            
-        return {
-            "mappa": self.giocatore.mappa_corrente,
-            "x": self.giocatore.x,
-            "y": self.giocatore.y,
-            "oggetti_vicini": self.giocatore.ottieni_oggetti_vicini(self.gestore_mappe),
-            "npg_vicini": self.giocatore.ottieni_npg_vicini(self.gestore_mappe)
-        }
         
     def muovi_giocatore(self, direzione):
         """

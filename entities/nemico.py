@@ -1,7 +1,11 @@
 from entities.entita import Entita
 
 class Nemico(Entita):
-    def __init__(self, nome, hp, danno, token="M"):  # M per Monster
+    def __init__(self, nome, hp, danno, token="M"):
+        """Inizializza un nuovo nemico.
+
+        Crea un'istanza della classe Nemico con nome, punti vita, danno e token specificati.
+        """
         # Chiamiamo il costruttore della classe base
         super().__init__(nome, hp=hp, hp_max=hp, forza=danno, difesa=0)
         
@@ -15,14 +19,10 @@ class Nemico(Entita):
         # Prima prova a usare l'implementazione base
         if hasattr(giocatore, 'subisci_danno'):
             return super().attacca(giocatore)
-        
+
         # Altrimenti usa il vecchio codice
         messaggio = f"{self.nome} ti attacca e ti infligge {self.danno} danni!"
-        if gioco:
-            gioco.io.mostra_messaggio(messaggio)
-        else:
-            gioco.io.mostra_messaggio(messaggio)  # Fallback se gioco non è fornito
-        
+        gioco.io.mostra_messaggio(messaggio)
         if hasattr(giocatore, 'ferisci'):
             giocatore.ferisci(self.danno)
         else:

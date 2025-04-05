@@ -13,6 +13,10 @@ class Oggetto:
         return f"Oggetto(nome={self.nome}, tipo={self.tipo}, effetto={self.effetto}, valore={self.valore}, descrizione={self.descrizione})"
 
     def usa(self, giocatore, gioco):
+        """Usa l'oggetto.
+
+        Questo metodo applica l'effetto dell'oggetto al giocatore.
+        """
         if self.tipo == "cura":
             giocatore.cura(self.effetto.get("cura", 0))
             gioco.io.mostra_messaggio(f"Usi {self.nome} e recuperi {self.effetto.get('cura', 0)} HP.")
@@ -35,11 +39,19 @@ class Oggetto:
             gioco.io.mostra_messaggio(f"L'oggetto {self.nome} non può essere usato direttamente.")
 
     def vendi(self, giocatore, gioco):
+        """Vende l'oggetto.
+
+        Questo metodo vende l'oggetto, aggiungendo il suo valore all'oro del giocatore e rimuovendolo dall'inventario.
+        """
         giocatore.aggiungi_oro(self.valore)
         giocatore.rimuovi_item(self.nome)
         gioco.io.mostra_messaggio(f"Hai venduto {self.nome} per {self.valore} monete d'oro")
     
     def equipaggia(self, giocatore, gioco=None):
+        """Equipaggia l'oggetto al giocatore.
+
+        Questo metodo equipaggia l'oggetto al giocatore, aggiornando le sue statistiche se necessario.
+        """
         # Versione silenziosa se non viene fornito gioco
         if self.tipo == "arma":
             # Rimuovo effetti dell'arma precedente se presente
@@ -67,6 +79,10 @@ class Oggetto:
                 gioco.io.mostra_messaggio(f"Hai equipaggiato {self.nome} come accessorio.")
 
     def rimuovi(self, giocatore, gioco=None):
+        """Rimuove l'oggetto dal giocatore.
+
+        Questo metodo rimuove l'oggetto dal giocatore, aggiornando le sue statistiche se necessario.
+        """
         # Versione silenziosa se non viene fornito gioco
         if self.tipo == "arma":
             if giocatore.arma:
@@ -92,6 +108,10 @@ class Oggetto:
     
     @classmethod
     def da_dizionario(cls, dati):
+        """Crea un oggetto da un dizionario.
+
+        Questo metodo di classe crea una nuova istanza di Oggetto da un dizionario contenente i suoi attributi.
+        """
         return cls(
             nome=dati["nome"],
             tipo=dati["tipo"],

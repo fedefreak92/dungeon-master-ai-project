@@ -1,6 +1,7 @@
-from items.oggetto_interattivo import OggettoInterattivo 
-from entities.npg import NPG     
-from entities.entita import Entita   
+import itertools
+from items.oggetto_interattivo import OggettoInterattivo
+from entities.npg import NPG
+from entities.entita import Entita
 from entities.giocatore import Giocatore
 from entities.nemico import Nemico
 
@@ -115,11 +116,10 @@ class Mappa:
             dict: Dizionario di posizioni e oggetti
         """
         oggetti_vicini = {}
-        for dx in range(-raggio, raggio + 1):
-            for dy in range(-raggio, raggio + 1):
-                pos = (x + dx, y + dy)
-                if pos in self.oggetti:
-                    oggetti_vicini[pos] = self.oggetti[pos]
+        for dx, dy in itertools.product(range(-raggio, raggio + 1), range(-raggio, raggio + 1)):
+            pos = (x + dx, y + dy)
+            if pos in self.oggetti:
+                oggetti_vicini[pos] = self.oggetti[pos]
         return oggetti_vicini
     
     def ottieni_npg_vicini(self, x, y, raggio=1):
@@ -134,11 +134,10 @@ class Mappa:
             dict: Dizionario di posizioni e NPG
         """
         npg_vicini = {}
-        for dx in range(-raggio, raggio + 1):
-            for dy in range(-raggio, raggio + 1):
-                pos = (x + dx, y + dy)
-                if pos in self.npg:
-                    npg_vicini[pos] = self.npg[pos]
+        for dx, dy in itertools.product(range(-raggio, raggio + 1), range(-raggio, raggio + 1)):
+            pos = (x + dx, y + dy)
+            if pos in self.npg:
+                npg_vicini[pos] = self.npg[pos]
         return npg_vicini
     
     def carica_layout_da_stringa(self, layout_str):

@@ -154,22 +154,18 @@ class Baule(OggettoInterattivo):
                 # Verifica se il giocatore ha una chiave
                 chiave_trovata = False
                 for item in giocatore.inventario:
-                    if isinstance(item, str):
-                        nome_item = item
-                    else:
-                        nome_item = item.nome
-                    
+                    nome_item = item if isinstance(item, str) else item.nome
                     if "chiave" in nome_item.lower():
                         chiave_trovata = True
                         break
-                
+
                 if not chiave_trovata:
                     if gioco:
                         gioco.io.mostra_messaggio("Il baule è chiuso a chiave. Ti serve una chiave per aprirlo.")
                     return
                 if gioco:
                     gioco.io.mostra_messaggio("Usi la chiave per aprire il baule...")
-            
+
             if gioco:
                 gioco.io.mostra_messaggio(f"Apri il {self.nome}...")
             self.stato = "aperto"
@@ -180,12 +176,10 @@ class Baule(OggettoInterattivo):
                         gioco.io.mostra_messaggio(f"- {oggetto.nome}")
                 giocatore.aggiungi_item(oggetto)
                 self.contenuto = []
-            else:
-                if gioco:
-                    gioco.io.mostra_messaggio("È vuoto.")
-        else:
-            if gioco:
-                gioco.io.mostra_messaggio(f"Il {self.nome} è già aperto.")
+            elif gioco:
+                gioco.io.mostra_messaggio("È vuoto.")
+        elif gioco:
+            gioco.io.mostra_messaggio(f"Il {self.nome} è già aperto.")
 
 
 class Porta(OggettoInterattivo):
@@ -200,22 +194,18 @@ class Porta(OggettoInterattivo):
                 # Verifica se il giocatore ha una chiave
                 chiave_trovata = False
                 for item in giocatore.inventario:
-                    if isinstance(item, str):
-                        nome_item = item
-                    else:
-                        nome_item = item.nome
-                    
+                    nome_item = item if isinstance(item, str) else item.nome
                     if "chiave" in nome_item.lower():
                         chiave_trovata = True
                         break
-                
+
                 if not chiave_trovata:
                     if gioco:
                         gioco.io.mostra_messaggio("La porta è chiusa a chiave. Ti serve una chiave per aprirla.")
                     return
                 if gioco:
                     gioco.io.mostra_messaggio("Usi la chiave per aprire la porta...")
-            
+
             if gioco:
                 gioco.io.mostra_messaggio(f"Apri la {self.nome}...")
             self.stato = "aperta"
@@ -225,9 +215,8 @@ class Porta(OggettoInterattivo):
             if gioco:
                 gioco.io.mostra_messaggio(f"Chiudi la {self.nome}...")
             self.stato = "chiusa"
-        else:
-            if gioco:
-                gioco.io.mostra_messaggio(f"La {self.nome} è {self.stato}.")
+        elif gioco:
+            gioco.io.mostra_messaggio(f"La {self.nome} è {self.stato}.")
 
 
 class Leva(OggettoInterattivo):
@@ -239,10 +228,10 @@ class Leva(OggettoInterattivo):
             if gioco:
                 gioco.io.mostra_messaggio(f"Attivi la {self.nome}...")
             self.stato = "attivata"
-            
+
             # Attiva/disattiva oggetti collegati
             for nome, oggetto in self.oggetti_collegati.items():
-                if oggetto.stato == "chiuso" or oggetto.stato == "chiusa":
+                if oggetto.stato in ["chiuso", "chiusa"]:
                     if gioco:
                         gioco.io.mostra_messaggio(f"La {self.nome} sblocca {oggetto.nome}!")
                     oggetto.stato = "aperto" if oggetto.nome.lower() == "baule" else "aperta"
@@ -254,10 +243,10 @@ class Leva(OggettoInterattivo):
             if gioco:
                 gioco.io.mostra_messaggio(f"Disattivi la {self.nome}...")
             self.stato = "disattivata"
-            
+
             # Ripristina lo stato degli oggetti collegati
             for nome, oggetto in self.oggetti_collegati.items():
-                if oggetto.stato == "aperto" or oggetto.stato == "aperta":
+                if oggetto.stato in ["aperto", "aperta"]:
                     if gioco:
                         gioco.io.mostra_messaggio(f"La {self.nome} blocca {oggetto.nome}!")
                     oggetto.stato = "chiuso" if oggetto.nome.lower() == "baule" else "chiusa"
@@ -287,21 +276,18 @@ class Trappola(OggettoInterattivo):
                 if gioco:
                     gioco.io.mostra_messaggio(f"Subisci {self.danno} danni!")
                 giocatore.subisci_danno(self.danno)
-            else:
-                if gioco:
-                    gioco.io.mostra_messaggio("Hai evitato la trappola!")
-        else:
-            if gioco:
-                gioco.io.mostra_messaggio(f"La {self.nome} è disattivata.")
+            elif gioco:
+                gioco.io.mostra_messaggio("Hai evitato la trappola!")
+        elif gioco:
+            gioco.io.mostra_messaggio(f"La {self.nome} è disattivata.")
     
     def disattiva(self, gioco=None):
         if self.stato == "attiva":
             if gioco:
                 gioco.io.mostra_messaggio(f"Disattivi la {self.nome}.")
             self.stato = "disattivata"
-        else:
-            if gioco:
-                gioco.io.mostra_messaggio(f"La {self.nome} è già disattivata.")
+        elif gioco:
+            gioco.io.mostra_messaggio(f"La {self.nome} è già disattivata.")
 
 
 class OggettoRompibile(OggettoInterattivo):
@@ -322,9 +308,7 @@ class OggettoRompibile(OggettoInterattivo):
                         for oggetto in self.materiali:
                             gioco.io.mostra_messaggio(f"- {oggetto.nome}")
                     giocatore.aggiungi_item(oggetto)
-            else:
-                if gioco:
-                    gioco.io.mostra_messaggio(f"Non sei abbastanza forte per rompere {self.nome}.")
-        else:
-            if gioco:
-                gioco.io.mostra_messaggio(f"{self.nome} è già rotto.")
+            elif gioco:
+                gioco.io.mostra_messaggio(f"Non sei abbastanza forte per rompere {self.nome}.")
+        elif gioco:
+            gioco.io.mostra_messaggio(f"{self.nome} è già rotto.")
