@@ -21,9 +21,10 @@ class MappaState(BaseState):
         }
     
     def esegui(self, gioco):
-        if not hasattr(gioco, 'gestore_mappe') or not gioco.giocatore.mappa_corrente:
+        if not gioco.giocatore.mappa_corrente:
             gioco.io.mostra_messaggio("Sistema mappa non disponibile!")
-            gioco.pop_stato()
+            if gioco.stato_corrente():
+                gioco.pop_stato()
             return
             
         mappa_corrente = gioco.gestore_mappe.ottieni_mappa(gioco.giocatore.mappa_corrente)
@@ -60,11 +61,12 @@ class MappaState(BaseState):
             self._mostra_elementi_vicini(gioco)
         elif scelta == "4":
             self.mostra_leggenda = not self.mostra_leggenda
-            gioco.io.mostra_messaggio("Leggenda " + ("attivata" if self.mostra_leggenda else "disattivata"))
+            gioco.io.messaggio_sistema("Leggenda " + ("attivata" if self.mostra_leggenda else "disattivata"))
         elif scelta == "5":
-            gioco.pop_stato()
+            if gioco.stato_corrente():
+                gioco.pop_stato()
         else:
-            gioco.io.mostra_messaggio("Scelta non valida.")
+            gioco.io.messaggio_errore("Scelta non valida.")
         
         avanti(gioco)
     
@@ -83,48 +85,28 @@ class MappaState(BaseState):
         # Aggiungi altri token speciali se necessario
     
     def _muovi_giocatore(self, gioco):
+        """Gestisce il movimento del giocatore sulla mappa"""
         gioco.io.mostra_messaggio("\n=== MOVIMENTO ===")
-        gioco.io.mostra_messaggio("In quale direzione vuoi muoverti?")
         gioco.io.mostra_messaggio("1. Nord")
         gioco.io.mostra_messaggio("2. Sud")
         gioco.io.mostra_messaggio("3. Est")
         gioco.io.mostra_messaggio("4. Ovest")
-        gioco.io.mostra_messaggio("5. Torna indietro")
+        gioco.io.mostra_messaggio("5. Indietro")
         
-        scelta = gioco.io.richiedi_input("\nScegli direzione: ")
+        scelta = gioco.io.richiedi_input("\nScegli una direzione: ")
         
         if scelta == "1":
-            dx, dy = self.direzioni["nord"]
+            self._sposta_giocatore(gioco, "nord")
         elif scelta == "2":
-            dx, dy = self.direzioni["sud"]
+            self._sposta_giocatore(gioco, "sud")
         elif scelta == "3":
-            dx, dy = self.direzioni["est"]
+            self._sposta_giocatore(gioco, "est")
         elif scelta == "4":
-            dx, dy = self.direzioni["ovest"]
+            self._sposta_giocatore(gioco, "ovest")
         elif scelta == "5":
             return
         else:
-            gioco.io.mostra_messaggio("Direzione non valida.")
-            return
-            
-        # Mappa corrente prima del movimento
-        mappa_precedente = gioco.giocatore.mappa_corrente
-        
-        # Tenta di muovere il giocatore
-        if gioco.giocatore.muovi(dx, dy, gioco.gestore_mappe):
-            gioco.io.mostra_messaggio(f"Ti sei spostato verso {list(self.direzioni.keys())[list(self.direzioni.values()).index((dx, dy))]}")
-            
-            # Controlla se c'è una porta per cambiare mappa
-            mappa = gioco.gestore_mappe.ottieni_mappa(gioco.giocatore.mappa_corrente)
-            
-            # Se la mappa è cambiata dopo il movimento
-            if mappa_precedente != gioco.giocatore.mappa_corrente:
-                gioco.io.mostra_messaggio(f"Hai attraversato una porta verso {gioco.giocatore.mappa_corrente}!")
-                
-                # Gestione dello stato in base al cambio di mappa
-                self._gestisci_cambio_mappa(gioco, mappa_precedente, gioco.giocatore.mappa_corrente)
-        else:
-            gioco.io.mostra_messaggio("Non puoi muoverti in quella direzione!")
+            gioco.io.messaggio_errore("Scelta non valida.")
     
     def _gestisci_cambio_mappa(self, gioco, mappa_origine, mappa_destinazione):
         """Gestisce il cambio di stato in base al cambio di mappa"""
@@ -138,9 +120,10 @@ class MappaState(BaseState):
             continua = gioco.io.richiedi_input("Vuoi continuare a esplorare la mappa? (s/n): ").lower()
             if continua != "s":
                 # Esci dallo stato mappa
-                gioco.pop_stato()
+                if gioco.stato_corrente():
+                    gioco.pop_stato()
                 # Passa direttamente allo stato mercato
-                from test_state.stati.mercato import MercatoState
+                from states.mercato import MercatoState
                 gioco.push_stato(MercatoState())
                 
         elif (self.stato_origine is not None and 
@@ -152,8 +135,10 @@ class MappaState(BaseState):
             continua = gioco.io.richiedi_input("Vuoi continuare a esplorare la mappa? (s/n): ").lower()
             if continua != "s":
                 # Esci dallo stato mappa e dallo stato mercato
-                gioco.pop_stato()  # Rimuove MappaState
-                gioco.pop_stato()  # Rimuove MercatoState
+                if gioco.stato_corrente():
+                    gioco.pop_stato()  # Rimuove MappaState
+                if gioco.stato_corrente():
+                    gioco.pop_stato()  # Rimuove MercatoState
     
     def _interagisci_ambiente(self, gioco):
         """Permette al giocatore di interagire con l'ambiente circostante"""
@@ -180,7 +165,7 @@ class MappaState(BaseState):
         elif scelta == "4":
             return
         else:
-            gioco.io.mostra_messaggio("Scelta non valida.")
+            gioco.io.messaggio_errore("Scelta non valida.")
     
     def _esamina_area(self, gioco):
         """Esamina l'area per trovare oggetti o personaggi"""
@@ -233,3 +218,33 @@ class MappaState(BaseState):
     def salva_stato_mappa(self, gioco):
         """Salva lo stato attuale della mappa"""
         # Implementazione per il salvataggio
+
+    def _sposta_giocatore(self, gioco, direzione):
+        """
+        Sposta il giocatore nella direzione specificata
+        
+        Args:
+            gioco: Oggetto Game
+            direzione: Stringa con la direzione (nord, sud, est, ovest)
+        """
+        # Ottieni lo spostamento dalla direzione
+        dx, dy = self.direzioni[direzione]
+        
+        # Mappa corrente prima del movimento
+        mappa_precedente = gioco.giocatore.mappa_corrente
+        
+        # Tenta di muovere il giocatore
+        if gioco.giocatore.muovi(dx, dy, gioco.gestore_mappe):
+            gioco.io.mostra_messaggio(f"Ti sei spostato verso {direzione}")
+            
+            # Controlla se c'è una porta per cambiare mappa
+            mappa = gioco.gestore_mappe.ottieni_mappa(gioco.giocatore.mappa_corrente)
+            
+            # Se la mappa è cambiata dopo il movimento
+            if mappa_precedente != gioco.giocatore.mappa_corrente:
+                gioco.io.mostra_messaggio(f"Hai attraversato una porta verso {gioco.giocatore.mappa_corrente}!")
+                
+                # Gestione dello stato in base al cambio di mappa
+                self._gestisci_cambio_mappa(gioco, mappa_precedente, gioco.giocatore.mappa_corrente)
+        else:
+            gioco.io.messaggio_errore("Non puoi muoverti in quella direzione!")

@@ -16,9 +16,41 @@ class ProvaAbilitaState(BaseState):
             contesto (dict, optional): Contesto opzionale per la prova (es. oggetto associato)
         """
         self.contesto = contesto or {}
+        self.fase = "scegli_abilita"  # Fase iniziale
+        self.ultimo_input = None  # Per memorizzare l'ultimo input dell'utente
+        self.abilita_scelta = None  # L'abilità scelta dall'utente
+        self.dati_contestuali = {}  # Per memorizzare dati tra più fasi
         
     def esegui(self, gioco):
         gioco.io.mostra_messaggio("\n=== PROVA DI ABILITÀ ===")
+        
+        # Gestione basata sulla fase corrente
+        if self.fase == "scegli_abilita":
+            self._mostra_menu_abilita(gioco)
+        elif self.fase == "elabora_scelta_abilita":
+            self._elabora_scelta_abilita(gioco)
+        elif self.fase == "scegli_modalita":
+            self._mostra_menu_modalita(gioco)
+        elif self.fase == "elabora_modalita":
+            self._elabora_modalita(gioco)
+        elif self.fase == "prova_base":
+            self._esegui_prova_base(gioco)
+        elif self.fase == "prova_npg":
+            self._esegui_prova_npg(gioco)
+        elif self.fase == "prova_oggetto":
+            self._esegui_prova_oggetto(gioco)
+        elif self.fase == "abilita_specifica":
+            self._esegui_prova_abilita_specifica(gioco)
+        elif self.fase == "elabora_scelta_abilita_specifica":
+            self._elabora_scelta_abilita_specifica(gioco)
+        elif self.fase == "conclusione":
+            self._concludi_prova(gioco)
+        else:
+            # Fase non riconosciuta, torna al menu principale
+            self.fase = "scegli_abilita"
+            self.esegui(gioco)
+    
+    def _mostra_menu_abilita(self, gioco):
         gioco.io.mostra_messaggio("Quale abilità vuoi mettere alla prova?")
         gioco.io.mostra_messaggio("1. Forza")
         gioco.io.mostra_messaggio("2. Destrezza")
@@ -29,6 +61,10 @@ class ProvaAbilitaState(BaseState):
         gioco.io.mostra_messaggio("7. Prova su abilità specifica (es. Percezione, Persuasione)")
         gioco.io.mostra_messaggio("8. Torna indietro")
         
+        self.ultimo_input = gioco.io.richiedi_input("\nScegli: ")
+        self.fase = "elabora_scelta_abilita"
+    
+    def _elabora_scelta_abilita(self, gioco):
         abilita = {
             "1": "forza",
             "2": "destrezza",
@@ -38,311 +74,400 @@ class ProvaAbilitaState(BaseState):
             "6": "carisma"
         }
         
-        scelta = gioco.io.richiedi_input("\nScegli: ")
+        scelta = self.ultimo_input
+        
         if scelta in abilita:
-            abilita_scelta = abilita[scelta]
-            
-            # Richiedi la modalità di prova
-            gioco.io.mostra_messaggio("\nScegli la modalità di prova:")
-            gioco.io.mostra_messaggio("1. Prova base (contro difficoltà)")
-            gioco.io.mostra_messaggio("2. Prova contro un personaggio non giocante (NPG)")
-            gioco.io.mostra_messaggio("3. Prova con un oggetto interattivo")
-            gioco.io.mostra_messaggio("4. Torna indietro")
-            
-            modalita = gioco.io.richiedi_input("\nScegli modalità: ")
-            
-            if modalita == "1":
-                # Prova base (il codice esistente)
-                self._prova_base(gioco, abilita_scelta)
-            elif modalita == "2":
-                # Prova contro NPG
-                self._prova_npg(gioco, abilita_scelta)
-            elif modalita == "3":
-                # Prova con oggetto interattivo
-                self._prova_oggetto(gioco, abilita_scelta)
-            elif modalita == "4":
-                # Torna al menu abilità (richiama esegui)
-                self.esegui(gioco)
-                return
-            else:
-                gioco.io.mostra_messaggio("Scelta non valida.")
-                self.esegui(gioco)
-                return
+            self.abilita_scelta = abilita[scelta]
+            self.fase = "scegli_modalita"
         elif scelta == "7":
-            # Prova di abilità specifica
-            self._prova_abilita_specifica(gioco)
-            return
+            self.fase = "abilita_specifica"
         elif scelta == "8":
-            gioco.pop_stato()
-            return
+            if gioco.stato_corrente():
+                gioco.pop_stato()
         else:
-            gioco.io.mostra_messaggio("Scelta non valida.")
-            self.esegui(gioco)
-            return
+            gioco.io.messaggio_errore("Scelta non valida.")
+            self.fase = "scegli_abilita"
+    
+    def _mostra_menu_modalita(self, gioco):
+        gioco.io.mostra_messaggio("\nScegli la modalità di prova:")
+        gioco.io.mostra_messaggio("1. Prova base (contro difficoltà)")
+        gioco.io.mostra_messaggio("2. Prova contro un personaggio non giocante (NPG)")
+        gioco.io.mostra_messaggio("3. Prova con un oggetto interattivo")
+        gioco.io.mostra_messaggio("4. Torna indietro")
         
+        self.ultimo_input = gioco.io.richiedi_input("\nScegli modalità: ")
+        self.fase = "elabora_modalita"
+    
+    def _elabora_modalita(self, gioco):
+        modalita = self.ultimo_input
+        
+        if modalita == "1":
+            # Prova base
+            self.fase = "prova_base"
+        elif modalita == "2":
+            # Prova contro NPG
+            self.fase = "prova_npg"
+        elif modalita == "3":
+            # Prova con oggetto interattivo
+            self.fase = "prova_oggetto"
+        elif modalita == "4":
+            # Torna al menu abilità
+            self.fase = "scegli_abilita"
+        else:
+            gioco.io.messaggio_errore("Scelta non valida.")
+            self.fase = "scegli_modalita"
+    
+    def _esegui_prova_base(self, gioco):
+        if "difficolta" not in self.dati_contestuali:
+            try:
+                difficolta_input = gioco.io.richiedi_input("Inserisci la difficoltà (5-20): ")
+                difficolta = int(difficolta_input)
+                difficolta = max(5, min(20, difficolta))  # Limita tra 5 e 20
+                self.dati_contestuali["difficolta"] = difficolta
+            except ValueError:
+                gioco.io.messaggio_errore("Devi inserire un numero per la difficoltà.")
+                self.fase = "scegli_modalita"
+                return
+        
+        # Effettua la prova
+        difficolta = self.dati_contestuali["difficolta"]
+        dado = Dado(20)
+        tiro = dado.tira()
+        
+        # Ottieni il modificatore in base al tipo di abilità
+        if self.abilita_scelta in ABILITA_ASSOCIATE:
+            # Per abilità specifiche, usa il metodo modificatore_abilita
+            modificatore = gioco.giocatore.modificatore_abilita(self.abilita_scelta)
+        else:
+            # Per caratteristiche base, usa l'attributo diretto
+            modificatore = getattr(gioco.giocatore, self.abilita_scelta)
+            
+        risultato = tiro + modificatore
+        
+        # Se disponibile, mostra anche il valore base dell'abilità
+        if hasattr(gioco.giocatore, f"{self.abilita_scelta}_base"):
+            valore_base = getattr(gioco.giocatore, f"{self.abilita_scelta}_base")
+            gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} ha {self.abilita_scelta.capitalize()} {valore_base} (modificatore: {modificatore})")
+        
+        gioco.io.mostra_messaggio(f"{gioco.giocatore.nome} tira un {tiro} + {modificatore} ({self.abilita_scelta}) = {risultato}")
+        
+        if risultato >= difficolta:
+            gioco.io.mostra_messaggio(f"Hai superato la prova di {self.abilita_scelta}!")
+            self._gestisci_successo(gioco, self.abilita_scelta)
+        else:
+            gioco.io.mostra_messaggio(f"Hai fallito la prova di {self.abilita_scelta}.")
+            self._gestisci_fallimento(gioco, self.abilita_scelta)
+            
+        # Attendi conferma e torna al menu principale
         gioco.io.richiedi_input("\nPremi Enter per continuare...")
-        gioco.pop_stato()
+        if gioco.stato_corrente():
+            gioco.pop_stato()
     
-    def _prova_base(self, gioco, abilita):
-        """Esegue una prova base contro una difficoltà"""
-        try:
-            difficolta = int(gioco.io.richiedi_input("Inserisci la difficoltà (5-20): "))
-            difficolta = max(5, min(20, difficolta))  # Limita tra 5 e 20
-            
-            dado = Dado(20)
-            tiro = dado.tira()
-            
-            # Usa direttamente getattr, che prenderà il valore del modificatore
-            # sia che usi il sistema vecchio (attributo diretto) sia quello nuovo (attraverso la proprietà)
-            modificatore = getattr(gioco.giocatore, abilita)
-            risultato = tiro + modificatore
-            
-            # Se disponibile, mostra anche il valore base dell'abilità
-            if hasattr(gioco.giocatore, f"{abilita}_base"):
-                valore_base = getattr(gioco.giocatore, f"{abilita}_base")
-                gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} ha {abilita.capitalize()} {valore_base} (modificatore: {modificatore})")
-            
-            gioco.io.mostra_messaggio(f"{gioco.giocatore.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
-            
-            if risultato >= difficolta:
-                gioco.io.mostra_messaggio(f"Hai superato la prova di {abilita}!")
-                self._gestisci_successo(gioco, abilita)
-            else:
-                gioco.io.mostra_messaggio(f"Hai fallito la prova di {abilita}.")
-                self._gestisci_fallimento(gioco, abilita)
-        except ValueError:
-            gioco.io.mostra_messaggio("Devi inserire un numero per la difficoltà.")
-    
-    def _prova_npg(self, gioco, abilita):
+    def _esegui_prova_npg(self, gioco):
         """Esegue una prova contro un NPG"""
-        # Ottieni il penultimo stato nella pila (lo stato che ha invocato questo)
-        stato_precedente = gioco.stato_stack[-2] if len(gioco.stato_stack) > 1 else None
-        
-        if not stato_precedente or not hasattr(stato_precedente, 'npg_presenti'):
-            gioco.io.mostra_messaggio("Non ci sono personaggi non giocanti nelle vicinanze.")
-            return
-        
-        gioco.io.mostra_messaggio("\nScegli il personaggio contro cui effettuare la prova:")
-        
-        # Gestione sia per dizionari che per liste
-        if isinstance(stato_precedente.npg_presenti, dict):
-            for i, nome in enumerate(stato_precedente.npg_presenti.keys(), 1):
-                gioco.io.mostra_messaggio(f"{i}. {nome}")
+        # Fase: lista NPG
+        if "fase_npg" not in self.dati_contestuali:
+            # Ottieni il penultimo stato nella pila (lo stato che ha invocato questo)
+            stato_precedente = gioco.stato_stack[-2] if len(gioco.stato_stack) > 1 else None
             
+            if not stato_precedente or not hasattr(stato_precedente, 'npg_presenti'):
+                gioco.io.mostra_messaggio("Non ci sono personaggi non giocanti nelle vicinanze.")
+                self.fase = "scegli_modalita"
+                return
+            
+            gioco.io.mostra_messaggio("\nScegli il personaggio contro cui effettuare la prova:")
+            
+            # Gestione sia per dizionari che per liste
+            if isinstance(stato_precedente.npg_presenti, dict):
+                for i, nome in enumerate(stato_precedente.npg_presenti.keys(), 1):
+                    gioco.io.mostra_messaggio(f"{i}. {nome}")
+                
+                self.dati_contestuali["fase_npg"] = "scelta_npg"
+                self.dati_contestuali["tipo_lista"] = "dizionario"
+                self.dati_contestuali["stato_precedente"] = stato_precedente
+                self.ultimo_input = gioco.io.richiedi_input("\nScegli NPG: ")
+                return
+            else:
+                # Gestione per liste
+                for i, npg in enumerate(stato_precedente.npg_presenti, 1):
+                    gioco.io.mostra_messaggio(f"{i}. {npg.nome}")
+                
+                self.dati_contestuali["fase_npg"] = "scelta_npg"
+                self.dati_contestuali["tipo_lista"] = "lista"
+                self.dati_contestuali["stato_precedente"] = stato_precedente
+                self.ultimo_input = gioco.io.richiedi_input("\nScegli NPG: ")
+                return
+        
+        # Fase: elabora scelta NPG
+        if self.dati_contestuali["fase_npg"] == "scelta_npg":
             try:
-                scelta = int(gioco.io.richiedi_input("\nScegli NPG: "))
-                if 1 <= scelta <= len(stato_precedente.npg_presenti):
-                    npg_nome = list(stato_precedente.npg_presenti.keys())[scelta - 1]
-                    npg = stato_precedente.npg_presenti[npg_nome]
-                    
-                    # Prima definisci il modificatore
-                    modificatore = getattr(gioco.giocatore, abilita)
-                    
-                    
-                    if hasattr(gioco.giocatore, f"{abilita}_base") and hasattr(npg, f"{abilita}_base"):
-                        g_valore = getattr(gioco.giocatore, f"{abilita}_base")
-                        n_valore = getattr(npg, f"{abilita}_base")
-                        gioco.io.mostra_messaggio(f"{gioco.giocatore.nome}: {abilita.capitalize()} {g_valore} (mod: {modificatore})")
-                    
-                    # Determina la difficoltà in base all'abilità
-                    if abilita in ["forza", "destrezza", "costituzione"]:
-                        # Prova fisica - confronta con lo stesso attributo dell'NPG
-                        difficolta = getattr(npg, abilita, 3) + 10  # Base 10 + mod NPG
-                    elif abilita in ["intelligenza", "saggezza", "carisma"]:
-                        # Prova sociale/mentale
-                        difficolta = getattr(npg, abilita, 3) + 8   # Base 8 + mod NPG
-                    
-                    dado = Dado(20)
-                    tiro = dado.tira()
-                    risultato = tiro + modificatore
-                    
-                    gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
-                    gioco.io.mostra_messaggio(f"Difficoltà contro {npg.nome}: {difficolta}")
-                    
-                    if risultato >= difficolta:
-                        gioco.io.mostra_messaggio(f"Hai superato la prova di {abilita} contro {npg.nome}!")
-                        self._gestisci_successo_npg(gioco, abilita, npg)
+                scelta = int(self.ultimo_input)
+                stato_precedente = self.dati_contestuali["stato_precedente"]
+                
+                if self.dati_contestuali["tipo_lista"] == "dizionario":
+                    if 1 <= scelta <= len(stato_precedente.npg_presenti):
+                        npg_nome = list(stato_precedente.npg_presenti.keys())[scelta - 1]
+                        npg = stato_precedente.npg_presenti[npg_nome]
+                        self.dati_contestuali["npg"] = npg
+                        self.dati_contestuali["fase_npg"] = "effettua_prova"
                     else:
-                        gioco.io.mostra_messaggio(f"Hai fallito la prova di {abilita} contro {npg.nome}.")
-                        self._gestisci_fallimento_npg(gioco, abilita, npg)
-                else:
-                    gioco.io.mostra_messaggio("Scelta non valida.")
+                        gioco.io.messaggio_errore("Scelta non valida.")
+                        self.fase = "scegli_modalita"
+                        return
+                else:  # lista
+                    if 1 <= scelta <= len(stato_precedente.npg_presenti):
+                        npg = stato_precedente.npg_presenti[scelta - 1]
+                        self.dati_contestuali["npg"] = npg
+                        self.dati_contestuali["fase_npg"] = "effettua_prova"
+                    else:
+                        gioco.io.messaggio_errore("Scelta non valida.")
+                        self.fase = "scegli_modalita"
+                        return
             except ValueError:
-                gioco.io.mostra_messaggio("Devi inserire un numero.")
+                gioco.io.messaggio_errore("Devi inserire un numero.")
+                self.fase = "scegli_modalita"
+                return
+        
+        # Fase: effettua la prova
+        npg = self.dati_contestuali["npg"]
+        
+        # Ottieni il modificatore in base al tipo di abilità
+        if self.abilita_scelta in ABILITA_ASSOCIATE:
+            # Per abilità specifiche, usa il metodo modificatore_abilita
+            modificatore = gioco.giocatore.modificatore_abilita(self.abilita_scelta)
         else:
-            # Gestione per liste
-            for i, npg in enumerate(stato_precedente.npg_presenti, 1):
-                gioco.io.mostra_messaggio(f"{i}. {npg.nome}")
-            
-            try:
-                scelta = int(gioco.io.richiedi_input("\nScegli NPG: "))
-                if 1 <= scelta <= len(stato_precedente.npg_presenti):
-                    npg = stato_precedente.npg_presenti[scelta - 1]
-                    
-                    # Prima definisci il modificatore
-                    modificatore = getattr(gioco.giocatore, abilita)
-                    
-                  
-                    if hasattr(gioco.giocatore, f"{abilita}_base") and hasattr(npg, f"{abilita}_base"):
-                        g_valore = getattr(gioco.giocatore, f"{abilita}_base")
-                        n_valore = getattr(npg, f"{abilita}_base")
-                        gioco.io.mostra_messaggio(f"{gioco.giocatore.nome}: {abilita.capitalize()} {g_valore} (mod: {modificatore})")
-                    
-                    # Determina la difficoltà in base all'abilità
-                    if abilita in ["forza", "destrezza", "costituzione"]:
-                        # Prova fisica - confronta con lo stesso attributo dell'NPG
-                        difficolta = getattr(npg, abilita, 3) + 10  # Base 10 + mod NPG
-                    elif abilita in ["intelligenza", "saggezza", "carisma"]:
-                        # Prova sociale/mentale
-                        difficolta = getattr(npg, abilita, 3) + 8   # Base 8 + mod NPG
-                    
-                    dado = Dado(20)
-                    tiro = dado.tira()
-                    risultato = tiro + modificatore
-                    
-                    gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
-                    gioco.io.mostra_messaggio(f"Difficoltà contro {npg.nome}: {difficolta}")
-                    
-                    if risultato >= difficolta:
-                        gioco.io.mostra_messaggio(f"Hai superato la prova di {abilita} contro {npg.nome}!")
-                        self._gestisci_successo_npg(gioco, abilita, npg)
-                    else:
-                        gioco.io.mostra_messaggio(f"Hai fallito la prova di {abilita} contro {npg.nome}.")
-                        self._gestisci_fallimento_npg(gioco, abilita, npg)
-                else:
-                    gioco.io.mostra_messaggio("Scelta non valida.")
-            except ValueError:
-                gioco.io.mostra_messaggio("Devi inserire un numero.")
+            # Per caratteristiche base, usa l'attributo diretto
+            modificatore = getattr(gioco.giocatore, self.abilita_scelta)
+        
+        if hasattr(gioco.giocatore, f"{self.abilita_scelta}_base") and hasattr(npg, f"{self.abilita_scelta}_base"):
+            g_valore = getattr(gioco.giocatore, f"{self.abilita_scelta}_base")
+            n_valore = getattr(npg, f"{self.abilita_scelta}_base")
+            gioco.io.mostra_messaggio(f"{gioco.giocatore.nome}: {self.abilita_scelta.capitalize()} {g_valore} (mod: {modificatore})")
+        
+        # Determina la difficoltà in base all'abilità
+        if self.abilita_scelta in ["forza", "destrezza", "costituzione"]:
+            # Prova fisica - confronta con lo stesso attributo dell'NPG
+            difficolta = getattr(npg, self.abilita_scelta, 3) + 10  # Base 10 + mod NPG
+        elif self.abilita_scelta in ["intelligenza", "saggezza", "carisma"]:
+            # Prova sociale/mentale
+            difficolta = getattr(npg, self.abilita_scelta, 3) + 8   # Base 8 + mod NPG
+        else:
+            # Abilità specifiche - difficoltà standard
+            difficolta = 12
+        
+        dado = Dado(20)
+        tiro = dado.tira()
+        risultato = tiro + modificatore
+        
+        gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} tira un {tiro} + {modificatore} ({self.abilita_scelta}) = {risultato}")
+        gioco.io.mostra_messaggio(f"Difficoltà contro {npg.nome}: {difficolta}")
+        
+        if risultato >= difficolta:
+            gioco.io.mostra_messaggio(f"Hai superato la prova di {self.abilita_scelta} contro {npg.nome}!")
+            self._gestisci_successo_npg(gioco, self.abilita_scelta, npg)
+        else:
+            gioco.io.mostra_messaggio(f"Hai fallito la prova di {self.abilita_scelta} contro {npg.nome}.")
+            self._gestisci_fallimento_npg(gioco, self.abilita_scelta, npg)
+        
+        # Attendi conferma e torna al menu principale
+        gioco.io.richiedi_input("\nPremi Enter per continuare...")
+        if gioco.stato_corrente():
+            gioco.pop_stato()
     
-    def _prova_oggetto(self, gioco, abilita):
+    def _esegui_prova_oggetto(self, gioco):
         """Esegue una prova con un oggetto interattivo"""
-        # Ottieni il penultimo stato nella pila (lo stato che ha invocato questo)
-        stato_precedente = gioco.stato_stack[-2] if len(gioco.stato_stack) > 1 else None
-        
-        if not stato_precedente or not hasattr(stato_precedente, 'oggetti_interattivi'):
-            gioco.io.mostra_messaggio("Non ci sono oggetti interattivi nelle vicinanze.")
-            return
-        
-        gioco.io.mostra_messaggio("\nScegli l'oggetto con cui interagire:")
-        
-        # Gestione sia per dizionari che per liste
-        if isinstance(stato_precedente.oggetti_interattivi, dict):
-            for i, nome in enumerate(stato_precedente.oggetti_interattivi.keys(), 1):
-                oggetto = stato_precedente.oggetti_interattivi[nome]
-                gioco.io.mostra_messaggio(f"{i}. {oggetto.nome} [{oggetto.stato}]")
+        # Fase: lista oggetti
+        if "fase_oggetto" not in self.dati_contestuali:
+            # Ottieni il penultimo stato nella pila (lo stato che ha invocato questo)
+            stato_precedente = gioco.stato_stack[-2] if len(gioco.stato_stack) > 1 else None
             
-            # Aggiungi l'opzione "Torna indietro" DOPO gli oggetti
-            num_opzione_torna = len(stato_precedente.oggetti_interattivi) + 1
-            gioco.io.mostra_messaggio(f"{num_opzione_torna}. Torna indietro")
+            if not stato_precedente or not hasattr(stato_precedente, 'oggetti_interattivi'):
+                gioco.io.mostra_messaggio("Non ci sono oggetti interattivi nelle vicinanze.")
+                self.fase = "scegli_modalita"
+                return
             
+            gioco.io.mostra_messaggio("\nScegli l'oggetto con cui interagire:")
+            
+            # Gestione sia per dizionari che per liste
+            if isinstance(stato_precedente.oggetti_interattivi, dict):
+                for i, nome in enumerate(stato_precedente.oggetti_interattivi.keys(), 1):
+                    oggetto = stato_precedente.oggetti_interattivi[nome]
+                    gioco.io.mostra_messaggio(f"{i}. {oggetto.nome} [{oggetto.stato}]")
+                
+                # Aggiungi l'opzione "Torna indietro" DOPO gli oggetti
+                num_opzione_torna = len(stato_precedente.oggetti_interattivi) + 1
+                gioco.io.mostra_messaggio(f"{num_opzione_torna}. Torna indietro")
+                
+                self.dati_contestuali["fase_oggetto"] = "scelta_oggetto"
+                self.dati_contestuali["tipo_lista"] = "dizionario"
+                self.dati_contestuali["stato_precedente"] = stato_precedente
+                self.ultimo_input = gioco.io.richiedi_input("\nScegli oggetto: ")
+                return
+            else:
+                # Gestione per liste
+                for i, oggetto in enumerate(stato_precedente.oggetti_interattivi, 1):
+                    gioco.io.mostra_messaggio(f"{i}. {oggetto.nome} [{oggetto.stato}]")
+                
+                # Aggiungi l'opzione "Torna indietro"
+                num_opzione_torna = len(stato_precedente.oggetti_interattivi) + 1
+                gioco.io.mostra_messaggio(f"{num_opzione_torna}. Torna indietro")
+                
+                self.dati_contestuali["fase_oggetto"] = "scelta_oggetto"
+                self.dati_contestuali["tipo_lista"] = "lista"
+                self.dati_contestuali["stato_precedente"] = stato_precedente
+                self.ultimo_input = gioco.io.richiedi_input("\nScegli oggetto: ")
+                return
+        
+        # Fase: elabora scelta oggetto
+        if self.dati_contestuali["fase_oggetto"] == "scelta_oggetto":
             try:
-                scelta = int(gioco.io.richiedi_input("\nScegli oggetto: "))
-                if 1 <= scelta <= len(stato_precedente.oggetti_interattivi):
-                    oggetto_nome = list(stato_precedente.oggetti_interattivi.keys())[scelta - 1]
-                    oggetto = stato_precedente.oggetti_interattivi[oggetto_nome]
-                    
-                    # Visualizza i valori base se disponibili
-                    if hasattr(gioco.giocatore, f"{abilita}_base"):
-                        valore_base = getattr(gioco.giocatore, f"{abilita}_base")
-                        gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} ha {abilita.capitalize()} {valore_base} (modificatore: {modificatore})")
-                    
-                    # Determina la difficoltà in base al tipo di oggetto e all'abilità
-                    if isinstance(oggetto, OggettoInterattivo):
-                        if abilita == "forza" and hasattr(oggetto, "forza_richiesta"):
-                            difficolta = oggetto.forza_richiesta + 8
-                        elif abilita == "destrezza" and hasattr(oggetto, "difficolta_salvezza"):
-                            difficolta = oggetto.difficolta_salvezza
-                        else:
-                            difficolta = 12  # Difficoltà standard
+                scelta = int(self.ultimo_input)
+                stato_precedente = self.dati_contestuali["stato_precedente"]
+                
+                if self.dati_contestuali["tipo_lista"] == "dizionario":
+                    num_opzione_torna = len(stato_precedente.oggetti_interattivi) + 1
+                    if 1 <= scelta <= len(stato_precedente.oggetti_interattivi):
+                        oggetto_nome = list(stato_precedente.oggetti_interattivi.keys())[scelta - 1]
+                        oggetto = stato_precedente.oggetti_interattivi[oggetto_nome]
+                        self.dati_contestuali["oggetto"] = oggetto
+                        self.dati_contestuali["fase_oggetto"] = "effettua_prova"
+                    elif scelta == num_opzione_torna:
+                        self.fase = "scegli_modalita"
+                        return
                     else:
-                        difficolta = 10  # Oggetto generico
-                    
-                    dado = Dado(20)
-                    tiro = dado.tira()
-                    modificatore = getattr(gioco.giocatore, abilita)
-                    risultato = tiro + modificatore
-                    
-                    gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
-                    gioco.io.mostra_messaggio(f"Difficoltà per {oggetto.nome}: {difficolta}")
-                    
-                    self.contesto["tipo"] = "oggetto"
-                    self.contesto["oggetto"] = oggetto
-                    
-                    if risultato >= difficolta:
-                        gioco.io.mostra_messaggio(f"Hai superato la prova di {abilita} con {oggetto.nome}!")
-                        self._gestisci_successo(gioco, abilita)
-                        
-                        # Attiva l'interazione specifica con l'oggetto
-                        if abilita == "forza" and hasattr(oggetto, "stato") and oggetto.stato == "integro":
-                            gioco.io.mostra_messaggio(f"Grazie alla tua forza, puoi interagire efficacemente con {oggetto.nome}!")
-                            oggetto.interagisci(gioco.giocatore)
+                        gioco.io.messaggio_errore("Scelta non valida.")
+                        self.fase = "scegli_modalita"
+                        return
+                else:  # lista
+                    num_opzione_torna = len(stato_precedente.oggetti_interattivi) + 1
+                    if 1 <= scelta <= len(stato_precedente.oggetti_interattivi):
+                        oggetto = stato_precedente.oggetti_interattivi[scelta - 1]
+                        self.dati_contestuali["oggetto"] = oggetto
+                        self.dati_contestuali["fase_oggetto"] = "effettua_prova"
+                    elif scelta == num_opzione_torna:
+                        self.fase = "scegli_modalita"
+                        return
                     else:
-                        gioco.io.mostra_messaggio(f"Hai fallito la prova di {abilita} con {oggetto.nome}.")
-                        self._gestisci_fallimento(gioco, abilita)
-                elif scelta == num_opzione_torna:
-                    return  # Torna al menu precedente
-                else:
-                    gioco.io.mostra_messaggio("Scelta non valida.")
+                        gioco.io.messaggio_errore("Scelta non valida.")
+                        self.fase = "scegli_modalita"
+                        return
             except ValueError:
-                gioco.io.mostra_messaggio("Devi inserire un numero.")
+                gioco.io.messaggio_errore("Devi inserire un numero.")
+                self.fase = "scegli_modalita"
+                return
+        
+        # Fase: effettua la prova
+        oggetto = self.dati_contestuali["oggetto"]
+        
+        # Ottieni il modificatore in base al tipo di abilità
+        if self.abilita_scelta in ABILITA_ASSOCIATE:
+            # Per abilità specifiche, usa il metodo modificatore_abilita
+            modificatore = gioco.giocatore.modificatore_abilita(self.abilita_scelta)
         else:
-            # Gestione per liste
-            for i, oggetto in enumerate(stato_precedente.oggetti_interattivi, 1):
-                gioco.io.mostra_messaggio(f"{i}. {oggetto.nome} [{oggetto.stato}]")
+            # Per caratteristiche base, usa l'attributo diretto
+            modificatore = getattr(gioco.giocatore, self.abilita_scelta)
+        
+        # Visualizza i valori base se disponibili
+        if hasattr(gioco.giocatore, f"{self.abilita_scelta}_base"):
+            valore_base = getattr(gioco.giocatore, f"{self.abilita_scelta}_base")
+            gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} ha {self.abilita_scelta.capitalize()} {valore_base} (modificatore: {modificatore})")
+        
+        # Determina la difficoltà in base al tipo di oggetto e all'abilità
+        if isinstance(oggetto, OggettoInterattivo):
+            if self.abilita_scelta == "forza" and hasattr(oggetto, "forza_richiesta"):
+                difficolta = oggetto.forza_richiesta + 8
+            elif self.abilita_scelta == "destrezza" and hasattr(oggetto, "difficolta_salvezza"):
+                difficolta = oggetto.difficolta_salvezza
+            else:
+                difficolta = 12  # Difficoltà standard
+        else:
+            difficolta = 10  # Oggetto generico
+        
+        dado = Dado(20)
+        tiro = dado.tira()
+        risultato = tiro + modificatore
+        
+        gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} tira un {tiro} + {modificatore} ({self.abilita_scelta}) = {risultato}")
+        gioco.io.mostra_messaggio(f"Difficoltà per {oggetto.nome}: {difficolta}")
+        
+        self.contesto["tipo"] = "oggetto"
+        self.contesto["oggetto"] = oggetto
+        
+        if risultato >= difficolta:
+            gioco.io.mostra_messaggio(f"Hai superato la prova di {self.abilita_scelta} con {oggetto.nome}!")
+            self._gestisci_successo(gioco, self.abilita_scelta)
             
-            # Aggiungi l'opzione "Torna indietro" DOPO gli oggetti
-            num_opzione_torna = len(stato_precedente.oggetti_interattivi) + 1
-            gioco.io.mostra_messaggio(f"{num_opzione_torna}. Torna indietro")
+            # Attiva l'interazione specifica con l'oggetto
+            if self.abilita_scelta == "forza" and hasattr(oggetto, "stato") and oggetto.stato == "integro":
+                gioco.io.mostra_messaggio(f"Grazie alla tua forza, puoi interagire efficacemente con {oggetto.nome}!")
+                oggetto.interagisci(gioco.giocatore)
+        else:
+            gioco.io.mostra_messaggio(f"Hai fallito la prova di {self.abilita_scelta} con {oggetto.nome}.")
+            self._gestisci_fallimento(gioco, self.abilita_scelta)
+        
+        # Attendi conferma e torna al menu principale
+        gioco.io.richiedi_input("\nPremi Enter per continuare...")
+        if gioco.stato_corrente():
+            gioco.pop_stato()
+    
+    def _esegui_prova_abilita_specifica(self, gioco):
+        """Gestisce la prova di un'abilità specifica come Percezione, Persuasione, ecc."""
+        gioco.io.mostra_messaggio("\nScegli l'abilità da provare:")
+        for i, abilita in enumerate(ABILITA_ASSOCIATE.keys(), 1):
+            # Mostra se il giocatore ha competenza
+            competenza = " [Competente]" if gioco.giocatore.abilita_competenze.get(abilita.lower()) else ""
+            gioco.io.mostra_messaggio(f"{i}. {abilita.capitalize()}{competenza}")
+        
+        self.ultimo_input = gioco.io.richiedi_input("\nScegli: ")
+        self.fase = "elabora_scelta_abilita_specifica"
+    
+    def _elabora_scelta_abilita_specifica(self, gioco):
+        try:
+            idx = int(self.ultimo_input) - 1
+            if 0 <= idx < len(ABILITA_ASSOCIATE):
+                self.abilita_scelta = list(ABILITA_ASSOCIATE.keys())[idx].lower()
+                self.dati_contestuali["abilita_scelta"] = self.abilita_scelta
+                self.fase = "scegli_modalita"
+            else:
+                gioco.io.messaggio_errore("Scelta non valida.")
+                self.fase = "abilita_specifica"
+        except (IndexError, ValueError):
+            gioco.io.messaggio_errore("Scelta non valida.")
+            self.fase = "abilita_specifica"
+    
+    def _concludi_prova(self, gioco):
+        gioco.io.richiedi_input("\nPremi Enter per continuare...")
+        if gioco.stato_corrente():
+            gioco.pop_stato()
             
-            try:
-                scelta = int(gioco.io.richiedi_input("\nScegli oggetto: "))
-                if 1 <= scelta <= len(stato_precedente.oggetti_interattivi):
-                    oggetto = stato_precedente.oggetti_interattivi[scelta - 1]
-                    
-                    # Visualizza i valori base se disponibili
-                    if hasattr(gioco.giocatore, f"{abilita}_base"):
-                        valore_base = getattr(gioco.giocatore, f"{abilita}_base")
-                        gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} ha {abilita.capitalize()} {valore_base} (modificatore: {modificatore})")
-                    
-                    # Determina la difficoltà in base al tipo di oggetto e all'abilità
-                    if isinstance(oggetto, OggettoInterattivo):
-                        if abilita == "forza" and hasattr(oggetto, "forza_richiesta"):
-                            difficolta = oggetto.forza_richiesta + 8
-                        elif abilita == "destrezza" and hasattr(oggetto, "difficolta_salvezza"):
-                            difficolta = oggetto.difficolta_salvezza
-                        else:
-                            difficolta = 12  # Difficoltà standard
-                    else:
-                        difficolta = 10  # Oggetto generico
-                    
-                    dado = Dado(20)
-                    tiro = dado.tira()
-                    modificatore = getattr(gioco.giocatore, abilita)
-                    risultato = tiro + modificatore
-                    
-                    gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
-                    gioco.io.mostra_messaggio(f"Difficoltà per {oggetto.nome}: {difficolta}")
-                    
-                    self.contesto["tipo"] = "oggetto"
-                    self.contesto["oggetto"] = oggetto
-                    
-                    if risultato >= difficolta:
-                        gioco.io.mostra_messaggio(f"Hai superato la prova di {abilita} con {oggetto.nome}!")
-                        self._gestisci_successo(gioco, abilita)
-                        
-                        # Attiva l'interazione specifica con l'oggetto
-                        if abilita == "forza" and hasattr(oggetto, "stato") and oggetto.stato == "integro":
-                            gioco.io.mostra_messaggio(f"Grazie alla tua forza, puoi interagire efficacemente con {oggetto.nome}!")
-                            oggetto.interagisci(gioco.giocatore)
-                    else:
-                        gioco.io.mostra_messaggio(f"Hai fallito la prova di {abilita} con {oggetto.nome}.")
-                        self._gestisci_fallimento(gioco, abilita)
-                elif scelta == num_opzione_torna:
-                    return  # Torna al menu precedente
-                else:
-                    gioco.io.mostra_messaggio("Scelta non valida.")
-            except ValueError:
-                gioco.io.mostra_messaggio("Devi inserire un numero.")
+    # Metodi di gestione degli effetti (rimangono invariati)
+    
+    def _gestisci_successo(self, gioco, abilita):
+        """Gestisce gli effetti del successo nella prova"""
+        if self.contesto.get("tipo") == "oggetto":
+            oggetto = self.contesto.get("oggetto")
+            if oggetto:
+                gioco.io.mostra_messaggio(f"Sei riuscito a interagire correttamente con {oggetto.nome}!")
+                
+        # Piccola ricompensa per il successo
+        exp = 5
+        if gioco.giocatore.guadagna_esperienza(exp):
+            gioco.io.mostra_messaggio(f"Hai guadagnato {exp} punti esperienza e sei salito di livello!")
+        else:
+            gioco.io.mostra_messaggio(f"Hai guadagnato {exp} punti esperienza.")
+    
+    def _gestisci_fallimento(self, gioco, abilita):
+        """Gestisce gli effetti del fallimento nella prova"""
+        if self.contesto.get("tipo") == "oggetto":
+            oggetto = self.contesto.get("oggetto")
+            if oggetto:
+                gioco.io.mostra_messaggio(f"Non sei riuscito a interagire correttamente con {oggetto.nome}.")
+                
+                # Se c'è una penalità, applicarla
+                if self.contesto.get("penalita"):
+                    danno = self.contesto.get("penalita")
+                    gioco.giocatore.subisci_danno(danno)
+                    gioco.io.mostra_messaggio(f"Subisci {danno} danni!")
     
     def _gestisci_successo_npg(self, gioco, abilita, npg):
         """Gestisce gli effetti del successo nella prova contro un NPG"""
@@ -396,238 +521,3 @@ class ProvaAbilitaState(BaseState):
             gioco.io.mostra_messaggio(f"{npg.nome} sembra infastidito dal tuo approccio.")
             if hasattr(npg, "stato_corrente"):
                 npg.cambia_stato("diffidente")
-        
-    def _gestisci_successo(self, gioco, abilita):
-        """Gestisce gli effetti del successo nella prova"""
-        if self.contesto.get("tipo") == "oggetto":
-            oggetto = self.contesto.get("oggetto")
-            if oggetto:
-                gioco.io.mostra_messaggio(f"Sei riuscito a interagire correttamente con {oggetto.nome}!")
-                
-        # Piccola ricompensa per il successo
-        exp = 5
-        if gioco.giocatore.guadagna_esperienza(exp):
-            gioco.io.mostra_messaggio(f"Hai guadagnato {exp} punti esperienza e sei salito di livello!")
-        else:
-            gioco.io.mostra_messaggio(f"Hai guadagnato {exp} punti esperienza.")
-    
-    def _gestisci_fallimento(self, gioco, abilita):
-        """Gestisce gli effetti del fallimento nella prova"""
-        if self.contesto.get("tipo") == "oggetto":
-            oggetto = self.contesto.get("oggetto")
-            if oggetto:
-                gioco.io.mostra_messaggio(f"Non sei riuscito a interagire correttamente con {oggetto.nome}.")
-                
-                # Se c'è una penalità, applicarla
-                if self.contesto.get("penalita"):
-                    danno = self.contesto.get("penalita")
-                    gioco.giocatore.subisci_danno(danno)
-                    gioco.io.mostra_messaggio(f"Subisci {danno} danni!")
-    
-    def _prova_abilita_specifica(self, gioco):
-        """Gestisce la prova di un'abilità specifica come Percezione, Persuasione, ecc."""
-        gioco.io.mostra_messaggio("\nScegli l'abilità da provare:")
-        for i, abilita in enumerate(ABILITA_ASSOCIATE.keys(), 1):
-            # Mostra se il giocatore ha competenza
-            competenza = " [Competente]" if gioco.giocatore.abilita_competenze.get(abilita.lower()) else ""
-            gioco.io.mostra_messaggio(f"{i}. {abilita.capitalize()}{competenza}")
-        
-        scelta = gioco.io.richiedi_input("\nScegli: ")
-        try:
-            idx = int(scelta) - 1
-            nome_abilita = list(ABILITA_ASSOCIATE.keys())[idx]
-            
-            # Chiedi la modalità di prova
-            gioco.io.mostra_messaggio("\nScegli la modalità di prova:")
-            gioco.io.mostra_messaggio("1. Prova base (contro difficoltà)")
-            gioco.io.mostra_messaggio("2. Prova contro un personaggio non giocante (NPG)")
-            gioco.io.mostra_messaggio("3. Prova con un oggetto interattivo")
-            gioco.io.mostra_messaggio("4. Torna indietro")
-            
-            modalita = gioco.io.richiedi_input("\nScegli modalità: ")
-            
-            if modalita == "1":
-                self._prova_abilita_base(gioco, nome_abilita)
-            elif modalita == "2":
-                self._prova_abilita_npg(gioco, nome_abilita)
-            elif modalita == "3":
-                self._prova_abilita_oggetto(gioco, nome_abilita)
-            elif modalita == "4":
-                self._prova_abilita_specifica(gioco)
-                return
-            else:
-                gioco.io.mostra_messaggio("Scelta non valida.")
-                self._prova_abilita_specifica(gioco)
-                return
-                
-            gioco.io.richiedi_input("\nPremi Enter per continuare...")
-            gioco.pop_stato()
-        except (IndexError, ValueError):
-            gioco.io.mostra_messaggio("Scelta non valida.")
-            self._prova_abilita_specifica(gioco)
-    
-    def _prova_abilita_base(self, gioco, nome_abilita):
-        """Esegue una prova base di abilità specifica contro una difficoltà"""
-        try:
-            difficolta = int(gioco.io.richiedi_input("Inserisci la difficoltà (5-25): "))
-            difficolta = max(5, min(25, difficolta))  # Limita tra 5 e 25
-            
-            dado = Dado(20)
-            tiro = dado.tira()
-            
-            caratteristica = ABILITA_ASSOCIATE.get(nome_abilita)
-            modificatore = gioco.giocatore.modificatore_abilita(nome_abilita)
-            modificatore_base = getattr(gioco.giocatore, f"modificatore_{caratteristica}")
-            competenza = gioco.giocatore.abilita_competenze.get(nome_abilita, False)
-            bonus_comp = gioco.giocatore.bonus_competenza if competenza else 0
-            
-            risultato = tiro + modificatore
-            
-            gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} ha {caratteristica.capitalize()} {getattr(gioco.giocatore, f'{caratteristica}_base')} (mod: {modificatore_base})")
-            if competenza:
-                gioco.io.mostra_messaggio(f"Ha competenza in {nome_abilita.capitalize()} (bonus: +{bonus_comp})")
-            gioco.io.mostra_messaggio(f"Tira un {tiro} + {modificatore_base} (mod) {'+' + str(bonus_comp) if bonus_comp else ''} = {risultato}")
-            
-            if risultato >= difficolta:
-                gioco.io.mostra_messaggio(f"Hai superato la prova di {nome_abilita}!")
-                self._gestisci_successo(gioco, nome_abilita)
-            else:
-                gioco.io.mostra_messaggio(f"Hai fallito la prova di {nome_abilita}.")
-                self._gestisci_fallimento(gioco, nome_abilita)
-        except ValueError:
-            gioco.io.mostra_messaggio("Devi inserire un numero per la difficoltà.")
-    
-    def _prova_abilita_npg(self, gioco, nome_abilita):
-        """Esegue una prova di abilità specifica contro un NPG"""
-        stato_precedente = gioco.stato_stack[-2] if len(gioco.stato_stack) > 1 else None
-        
-        if not stato_precedente or not hasattr(stato_precedente, 'npg_presenti'):
-            gioco.io.mostra_messaggio("Non ci sono personaggi non giocanti nelle vicinanze.")
-            return
-        
-        gioco.io.mostra_messaggio("\nScegli il personaggio contro cui effettuare la prova:")
-        
-        # Gestione sia per dizionari che per liste
-        if isinstance(stato_precedente.npg_presenti, dict):
-            for i, nome in enumerate(stato_precedente.npg_presenti.keys(), 1):
-                gioco.io.mostra_messaggio(f"{i}. {nome}")
-            
-            try:
-                scelta = int(gioco.io.richiedi_input("\nScegli NPG: "))
-                if 1 <= scelta <= len(stato_precedente.npg_presenti):
-                    npg_nome = list(stato_precedente.npg_presenti.keys())[scelta - 1]
-                    npg = stato_precedente.npg_presenti[npg_nome]
-                    
-                    # Calcola la difficoltà in base al tipo di abilità
-                    caratteristica = ABILITA_ASSOCIATE.get(nome_abilita)
-                    difficolta = 10  # Difficoltà base
-                    
-                    # Aggiusta la difficoltà in base al tipo di abilità
-                    if nome_abilita in ["furtività", "percezione", "intuito"]:
-                        difficolta += getattr(npg, "saggezza", 0)
-                    elif nome_abilita in ["persuasione", "intimidire", "inganno"]:
-                        difficolta += getattr(npg, "carisma", 0)
-                    
-                    dado = Dado(20)
-                    tiro = dado.tira()
-                    modificatore = gioco.giocatore.modificatore_abilita(nome_abilita)
-                    risultato = tiro + modificatore
-                    
-                    # Mostra dettagli della prova
-                    caratteristica_base = getattr(gioco.giocatore, f"{caratteristica}_base")
-                    mod_caratteristica = getattr(gioco.giocatore, f"modificatore_{caratteristica}")
-                    competenza = gioco.giocatore.abilita_competenze.get(nome_abilita, False)
-                    bonus_comp = gioco.giocatore.bonus_competenza if competenza else 0
-                    
-                    gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} usa {nome_abilita.capitalize()} ({caratteristica}, valore: {caratteristica_base}, mod: {mod_caratteristica})")
-                    if competenza:
-                        gioco.io.mostra_messaggio(f"Con competenza (+{bonus_comp})")
-                    gioco.io.mostra_messaggio(f"Tira un {tiro} + {modificatore} = {risultato}")
-                    gioco.io.mostra_messaggio(f"Difficoltà contro {npg.nome}: {difficolta}")
-                    
-                    if risultato >= difficolta:
-                        gioco.io.mostra_messaggio(f"Hai superato la prova di {nome_abilita} contro {npg.nome}!")
-                        self._gestisci_successo_npg(gioco, nome_abilita, npg)
-                    else:
-                        gioco.io.mostra_messaggio(f"Hai fallito la prova di {nome_abilita} contro {npg.nome}.")
-                        self._gestisci_fallimento_npg(gioco, nome_abilita, npg)
-                else:
-                    gioco.io.mostra_messaggio("Scelta non valida.")
-            except ValueError:
-                gioco.io.mostra_messaggio("Devi inserire un numero.")
-        else:
-            # Implementazione per liste simile a quella sopra
-            gioco.io.mostra_messaggio("Funzionalità per liste di NPG non ancora implementata completamente.")
-    
-    def _prova_abilita_oggetto(self, gioco, nome_abilita):
-        """Esegue una prova di abilità specifica con un oggetto interattivo"""
-        stato_precedente = gioco.stato_stack[-2] if len(gioco.stato_stack) > 1 else None
-        
-        if not stato_precedente or not hasattr(stato_precedente, 'oggetti_interattivi'):
-            gioco.io.mostra_messaggio("Non ci sono oggetti interattivi nelle vicinanze.")
-            return
-        
-        gioco.io.mostra_messaggio("\nScegli l'oggetto con cui interagire:")
-        
-        # Gestione sia per dizionari che per liste
-        if isinstance(stato_precedente.oggetti_interattivi, dict):
-            for i, nome in enumerate(stato_precedente.oggetti_interattivi.keys(), 1):
-                oggetto = stato_precedente.oggetti_interattivi[nome]
-                gioco.io.mostra_messaggio(f"{i}. {oggetto.nome} [{oggetto.stato}]")
-            
-            # Aggiungi l'opzione "Torna indietro" DOPO gli oggetti
-            num_opzione_torna = len(stato_precedente.oggetti_interattivi) + 1
-            gioco.io.mostra_messaggio(f"{num_opzione_torna}. Torna indietro")
-            
-            try:
-                scelta = int(gioco.io.richiedi_input("\nScegli oggetto: "))
-                if 1 <= scelta <= len(stato_precedente.oggetti_interattivi):
-                    oggetto_nome = list(stato_precedente.oggetti_interattivi.keys())[scelta - 1]
-                    oggetto = stato_precedente.oggetti_interattivi[oggetto_nome]
-                    
-                    # Determina la difficoltà
-                    if nome_abilita in oggetto.difficolta_abilita:
-                        difficolta = oggetto.difficolta_abilita[nome_abilita]
-                    else:
-                        difficolta = 12  # Default
-                    
-                    # Tiro dell'abilità
-                    dado = Dado(20)
-                    tiro = dado.tira()
-                    modificatore = gioco.giocatore.modificatore_abilita(nome_abilita)
-                    risultato = tiro + modificatore
-                    
-                    # Mostra dettagli della prova
-                    caratteristica = ABILITA_ASSOCIATE.get(nome_abilita)
-                    caratteristica_base = getattr(gioco.giocatore, f"{caratteristica}_base")
-                    mod_caratteristica = getattr(gioco.giocatore, f"modificatore_{caratteristica}")
-                    competenza = gioco.giocatore.abilita_competenze.get(nome_abilita, False)
-                    bonus_comp = gioco.giocatore.bonus_competenza if competenza else 0
-                    
-                    gioco.io.mostra_messaggio(f"\n{gioco.giocatore.nome} usa {nome_abilita.capitalize()} ({caratteristica}, valore: {caratteristica_base}, mod: {mod_caratteristica})")
-                    if competenza:
-                        gioco.io.mostra_messaggio(f"Con competenza (+{bonus_comp})")
-                    gioco.io.mostra_messaggio(f"Tira un {tiro} + {modificatore} = {risultato}")
-                    gioco.io.mostra_messaggio(f"Difficoltà per {oggetto.nome}: {difficolta}")
-                    
-                    self.contesto["tipo"] = "oggetto"
-                    self.contesto["oggetto"] = oggetto
-                    
-                    if risultato >= difficolta:
-                        gioco.io.mostra_messaggio(f"Hai superato la prova di {nome_abilita} con {oggetto.nome}!")
-                        self._gestisci_successo(gioco, nome_abilita)
-                        
-                        # Usa il nuovo sistema di interazione specifica
-                        oggetto.interagisci_specifico(gioco.giocatore, nome_abilita, gioco)
-                    else:
-                        gioco.io.mostra_messaggio(f"Hai fallito la prova di {nome_abilita} con {oggetto.nome}.")
-                        self._gestisci_fallimento(gioco, nome_abilita)
-                elif scelta == num_opzione_torna:
-                    return  # Torna al menu precedente
-                else:
-                    gioco.io.mostra_messaggio("Scelta non valida.")
-            except ValueError:
-                gioco.io.mostra_messaggio("Devi inserire un numero.")
-        else:
-            # Implementazione per liste simile a quella sopra
-            gioco.io.mostra_messaggio("Funzionalità per liste di oggetti non ancora implementata completamente.")

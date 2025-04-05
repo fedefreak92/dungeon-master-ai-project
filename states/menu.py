@@ -14,4 +14,4 @@ class MenuState(BaseState):
         elif scelta == "2":
             gioco.running = False
         else:
-            gioco.io.mostra_messaggio("Scelta non valida!") 
+            gioco.io.messaggio_errore("Scelta non valida!") 
