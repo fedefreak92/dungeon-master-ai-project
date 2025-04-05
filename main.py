@@ -23,7 +23,7 @@ def main():
 
     if scelta == "2":
         # Crea un gioco temporaneo solo per il caricamento
-        gioco_temp = Game(None, None)
+        gioco_temp = Game(None, None, e_temporaneo=True)
         
         if gioco_temp.carica():
             # Se il caricamento è riuscito, crea il gioco vero con lo stato iniziale
