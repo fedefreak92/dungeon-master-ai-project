@@ -7,18 +7,17 @@ class Giocatore(Entita):
         self.classe = classe
         
         # Chiamiamo il costruttore della classe base con valori predefiniti per un giocatore
-        super().__init__(nome, hp=20, hp_max=20, forza_base=12, difesa=2, destrezza_base=10, costituzione_base=12, intelligenza_base=10, saggezza_base=10, carisma_base=10)
-        
-        # Sovrascrivi il token
-        self.token = "P"  # P per Player
+        super().__init__(nome, hp=20, hp_max=20, forza_base=12, difesa=2, destrezza_base=10, 
+                         costituzione_base=12, intelligenza_base=10, saggezza_base=10, 
+                         carisma_base=10, token="P")  # P per Player
         
         # Impostiamo altri valori diversi dai predefiniti di Entita
         self.oro = 100
         
-        # Attributi per la posizione sulla mappa
-        self.mappa_corrente = None  # Nome della mappa corrente
-        self.x = 0  # Coordinata X sulla mappa
-        self.y = 0  # Coordinata Y sulla mappa
+        # Inizializza attributi per le missioni
+        self.progresso_missioni = {}
+        self.missioni_attive = []
+        self.missioni_completate = []
         
         # Inizializza competenze in abilità specifiche per classe
         self._inizializza_competenze()
@@ -133,19 +132,6 @@ class Giocatore(Entita):
         # Poi aggiungiamo il nostro messaggio personalizzato
         io.mostra_messaggio("Sei diventato più forte!")
 
-    def imposta_posizione(self, mappa_nome, x, y):
-        """
-        Imposta la posizione del giocatore su una mappa specifica
-        
-        Args:
-            mappa_nome (str): Nome della mappa
-            x (int): Coordinata X
-            y (int): Coordinata Y
-        """
-        self.mappa_corrente = mappa_nome
-        self.x = x
-        self.y = y
-    
     def muovi(self, dx, dy, gestore_mappe):
         """
         Tenta di muovere il giocatore nella direzione specificata
@@ -162,17 +148,6 @@ class Giocatore(Entita):
             return False
         
         return gestore_mappe.muovi_giocatore(self, dx, dy)
-    
-    def ottieni_posizione(self):
-        """
-        Restituisce la posizione corrente del giocatore
-        
-        Returns:
-            tuple: Coordinate (x, y) o None se non impostata
-        """
-        if self.mappa_corrente:
-            return (self.x, self.y)
-        return None
     
     def interagisci_con_oggetto_adiacente(self, gestore_mappe):
         """
@@ -273,3 +248,131 @@ class Giocatore(Entita):
             return {}
         
         return mappa.ottieni_npg_vicini(self.x, self.y, raggio)
+
+    def to_dict(self):
+        """
+        Converte il giocatore in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione del giocatore in formato dizionario
+        """
+        # Ottieni il dizionario base dalla classe genitore
+        data = super().to_dict()
+        
+        # Aggiungi attributi specifici del giocatore
+        data.update({
+            "classe": self.classe,
+            "progresso_missioni": self.progresso_missioni,
+            "missioni_attive": self.missioni_attive,
+            "missioni_completate": self.missioni_completate,
+            "posizione": [self.x, self.y]  # Per compatibilità
+        })
+        
+        return data
+        
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di Giocatore da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati del giocatore
+            
+        Returns:
+            Giocatore: Nuova istanza di Giocatore
+        """
+        # Estrai i dati specifici della sottoclasse
+        nome = data.get("nome", "Sconosciuto")
+        classe = data.get("classe", "guerriero")
+        
+        # Crea l'istanza con i parametri base
+        giocatore = cls(nome, classe)
+        
+        # Imposta gli attributi base usando la classe base
+        # Ignoriamo l'inizializzazione che fa Entita.from_dict
+        # perché il costruttore di Giocatore ha una logica specifica
+        
+        # Imposta gli attributi base
+        giocatore.hp = data.get("hp", giocatore.hp)
+        giocatore.hp_max = data.get("hp_max", giocatore.hp_max)
+        giocatore.forza_base = data.get("forza_base", giocatore.forza_base)
+        giocatore.destrezza_base = data.get("destrezza_base", giocatore.destrezza_base)
+        giocatore.costituzione_base = data.get("costituzione_base", giocatore.costituzione_base)
+        giocatore.intelligenza_base = data.get("intelligenza_base", giocatore.intelligenza_base)
+        giocatore.saggezza_base = data.get("saggezza_base", giocatore.saggezza_base)
+        giocatore.carisma_base = data.get("carisma_base", giocatore.carisma_base)
+        
+        # Imposta i modificatori
+        giocatore.modificatore_forza = giocatore.calcola_modificatore(giocatore.forza_base)
+        giocatore.modificatore_destrezza = giocatore.calcola_modificatore(giocatore.destrezza_base)
+        giocatore.modificatore_costituzione = giocatore.calcola_modificatore(giocatore.costituzione_base)
+        giocatore.modificatore_intelligenza = giocatore.calcola_modificatore(giocatore.intelligenza_base)
+        giocatore.modificatore_saggezza = giocatore.calcola_modificatore(giocatore.saggezza_base)
+        giocatore.modificatore_carisma = giocatore.calcola_modificatore(giocatore.carisma_base)
+        
+        # Imposta posizione
+        if "posizione" in data and isinstance(data["posizione"], list) and len(data["posizione"]) >= 2:
+            giocatore.x, giocatore.y = data["posizione"]
+        else:
+            giocatore.x = data.get("x", 0)
+            giocatore.y = data.get("y", 0)
+            
+        giocatore.mappa_corrente = data.get("mappa_corrente")
+        
+        # Ripristina altri attributi
+        giocatore.abilita_competenze = data.get("abilita_competenze", {})
+        giocatore.bonus_competenza = data.get("bonus_competenza", 2)
+        giocatore.difesa = data.get("difesa", 0)
+        giocatore.oro = data.get("oro", 0)
+        giocatore.esperienza = data.get("esperienza", 0)
+        giocatore.livello = data.get("livello", 1)
+        
+        # Gestisci missioni
+        giocatore.progresso_missioni = data.get("progresso_missioni", {})
+        giocatore.missioni_attive = data.get("missioni_attive", [])
+        giocatore.missioni_completate = data.get("missioni_completate", [])
+        
+        # Caricamento dell'inventario e dell'equipaggiamento richiede oggetti
+        # Questo è fatto esternamente o in modo più complesso
+        from items.oggetto import Oggetto
+        
+        # Gestisci inventario
+        inventario_raw = data.get("inventario", [])
+        inventario = []
+        
+        for item in inventario_raw:
+            if isinstance(item, dict):
+                inventario.append(Oggetto.from_dict(item))
+            elif isinstance(item, str):
+                # Crea un oggetto generico se solo il nome è disponibile
+                inventario.append(Oggetto(item, "comune"))
+                
+        giocatore.inventario = inventario
+        
+        # Ripristina arma
+        arma_data = data.get("arma")
+        if isinstance(arma_data, dict):
+            giocatore.arma = Oggetto.from_dict(arma_data)
+        elif isinstance(arma_data, str):
+            giocatore.arma = Oggetto(arma_data, "arma")
+        
+        # Ripristina armatura
+        armatura_data = data.get("armatura")
+        if isinstance(armatura_data, dict):
+            giocatore.armatura = Oggetto.from_dict(armatura_data)
+        elif isinstance(armatura_data, str):
+            giocatore.armatura = Oggetto(armatura_data, "armatura")
+            
+        # Ripristina accessori
+        accessori_data = data.get("accessori", [])
+        accessori = []
+        
+        for acc in accessori_data:
+            if isinstance(acc, dict):
+                accessori.append(Oggetto.from_dict(acc))
+            elif isinstance(acc, str):
+                accessori.append(Oggetto(acc, "accessorio"))
+                
+        giocatore.accessori = accessori
+        
+        return giocatore
