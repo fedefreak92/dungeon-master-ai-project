@@ -161,10 +161,10 @@ class DialogoState(BaseState):
         if isinstance(effetto, str):
             # Gestione effetti semplici
             if effetto == "riposo":
-                gioco.giocatore.cura(5)
+                gioco.giocatore.cura(5, gioco)
                 gioco.io.mostra_messaggio("\n*Hai riposato e recuperato 5 HP*")
             elif effetto == "cura_leggera":
-                gioco.giocatore.cura(3)
+                gioco.giocatore.cura(3, gioco)
                 gioco.io.mostra_messaggio("\n*L'unguento di Violetta ti cura per 3 HP*")
         elif isinstance(effetto, dict):
             # Gestione effetti complessi
@@ -172,7 +172,7 @@ class DialogoState(BaseState):
             
             if tipo == "consegna_oro":
                 quantita = effetto.get("quantita", 10)
-                self.npg.trasferisci_oro(gioco.giocatore, quantita)
+                self.npg.trasferisci_oro(gioco.giocatore, quantita, gioco)
                 gioco.io.mostra_messaggio(f"\n*{self.npg.nome} ti ha dato {quantita} monete d'oro*")
                 
             elif tipo == "aggiungi_item":

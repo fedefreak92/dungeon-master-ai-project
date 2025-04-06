@@ -155,7 +155,7 @@ class CombattimentoState(BaseState):
                 
                 # Usa il metodo usa dell'oggetto
                 if hasattr(item, 'usa'):
-                    item.usa(giocatore)
+                    item.usa(giocatore, gioco)
                 else:
                     # Retrocompatibilità con stringhe
                     self._applica_effetto_oggetto(giocatore, item, gioco)
@@ -367,7 +367,7 @@ class CombattimentoState(BaseState):
             
             # Guadagna esperienza
             exp_guadagnata = 25 * (1 + self.avversario.livello if hasattr(self.avversario, 'livello') else 1)
-            if giocatore.guadagna_esperienza(exp_guadagnata):
+            if giocatore.guadagna_esperienza(exp_guadagnata, gioco):
                 gioco.io.mostra_messaggio(f"Hai guadagnato {exp_guadagnata} punti esperienza e sei salito di livello!")
             else:
                 gioco.io.mostra_messaggio(f"Hai guadagnato {exp_guadagnata} punti esperienza!")
@@ -390,7 +390,7 @@ class CombattimentoState(BaseState):
             critico = True
         
         # Applica il danno all'avversario
-        self.avversario.ferisci(danno)
+        self.avversario.ferisci(danno, gioco)
         
         if critico:
             gioco.io.mostra_messaggio(f"\nCOLPO CRITICO! Attacchi {self.avversario.nome} e infliggi {danno} danni!")
@@ -409,7 +409,7 @@ class CombattimentoState(BaseState):
         danno_effettivo = max(1, danno - giocatore.difesa)
         
         gioco.io.mostra_messaggio(f"\n{self.avversario.nome} ti attacca e infligge {danno_effettivo} danni!")
-        giocatore.ferisci(danno)
+        giocatore.ferisci(danno, gioco)
     
     def _applica_effetto_oggetto(self, giocatore, item, gioco):
         """Applica l'effetto di un oggetto"""
@@ -424,13 +424,13 @@ class CombattimentoState(BaseState):
             elif "Veleno" in item:
                 # Avvelena il nemico
                 danno = 5
-                self.avversario.ferisci(danno)
+                self.avversario.ferisci(danno, gioco)
                 gioco.io.mostra_messaggio(f"\nUsi {item} e infliggi {danno} danni a {self.avversario.nome}!")
                 giocatore.inventario.remove(item)
             elif "Bomba" in item:
                 # Danneggia gravemente il nemico
                 danno = 15
-                self.avversario.ferisci(danno)
+                self.avversario.ferisci(danno, gioco)
                 gioco.io.mostra_messaggio(f"\nUsi {item} e infliggi {danno} danni a {self.avversario.nome}!")
                 giocatore.inventario.remove(item)
             else:

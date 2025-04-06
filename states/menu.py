@@ -15,3 +15,26 @@ class MenuState(BaseState):
             gioco.running = False
         else:
             gioco.io.messaggio_errore("Scelta non valida!") 
+            
+    def to_dict(self):
+        """
+        Converte lo stato in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dello stato in formato dizionario
+        """
+        # Utilizza il metodo base perché MenuState non ha attributi aggiuntivi
+        return super().to_dict()
+
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di MenuState da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati dello stato
+            
+        Returns:
+            MenuState: Nuova istanza dello stato
+        """
+        return cls() 

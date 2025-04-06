@@ -151,7 +151,7 @@ class MappaState(BaseState):
         scelta = gioco.io.richiedi_input("\nScegli: ")
         
         if scelta == "1":
-            if gioco.giocatore.interagisci_con_oggetto_adiacente(gioco.gestore_mappe):
+            if gioco.giocatore.interagisci_con_oggetto_adiacente(gioco.gestore_mappe, gioco):
                 pass  # L'interazione è già gestita nel metodo
             else:
                 gioco.io.mostra_messaggio("Non ci sono oggetti con cui interagire nelle vicinanze.")
@@ -248,3 +248,45 @@ class MappaState(BaseState):
                 self._gestisci_cambio_mappa(gioco, mappa_precedente, gioco.giocatore.mappa_corrente)
         else:
             gioco.io.messaggio_errore("Non puoi muoverti in quella direzione!")
+            
+    def to_dict(self):
+        """
+        Converte lo stato in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dello stato in formato dizionario
+        """
+        # Ottieni il dizionario base
+        data = super().to_dict()
+        
+        # Aggiungi attributi specifici
+        data.update({
+            "mostra_leggenda": self.mostra_leggenda
+        })
+        
+        # Salva lo stato di origine se presente
+        if self.stato_origine and hasattr(self.stato_origine, "__class__"):
+            data["stato_origine_tipo"] = self.stato_origine.__class__.__name__
+        
+        return data
+
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di MappaState da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati dello stato
+            
+        Returns:
+            MappaState: Nuova istanza dello stato
+        """
+        state = cls()
+        
+        # Ripristina attributi
+        state.mostra_leggenda = data.get("mostra_leggenda", True)
+        
+        # Nota: stato_origine verrà gestito dopo il caricamento completo
+        # dello stack degli stati, in quanto potrebbe richiedere riferimenti circolari
+        
+        return state
