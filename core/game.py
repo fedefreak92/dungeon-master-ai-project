@@ -1,22 +1,24 @@
 from world.gestore_mappe import GestitoreMappe
 from core.io_interface import TerminalIO
 import json
+import ast  # Importa ast per literal_eval
 
 
 class Game:
-    def __init__(self, giocatore, stato_iniziale, e_temporaneo=False):
+    def __init__(self, giocatore, stato_iniziale, io_handler, e_temporaneo=False):
         """
         Inizializza il gioco con un giocatore e uno stato iniziale
         
         Args:
             giocatore: L'oggetto giocatore
             stato_iniziale: Lo stato iniziale del gioco
+            io_handler: Handler per input/output obbligatorio
             e_temporaneo: Se True, indica che è un'istanza temporanea solo per caricamento
         """
         self.giocatore = giocatore
         self.stato_stack = []  # Stack degli stati
         self.attivo = True
-        self.io = TerminalIO()
+        self.io = io_handler
         
         # Inizializza il gestore delle mappe
         self.gestore_mappe = GestitoreMappe()
@@ -83,6 +85,10 @@ class Game:
             if nuovo_stato is None:
                 self.io.mostra_messaggio("Errore: tentativo di aggiungere uno stato nullo.")
                 return
+            
+            # Imposta il contesto di gioco nello stato prima di usarlo
+            if hasattr(nuovo_stato, 'set_game_context'):
+                nuovo_stato.set_game_context(self)
                 
             if self.stato_corrente():
                 self.stato_corrente().pausa(self)  # Mette in pausa lo stato corrente
@@ -114,6 +120,9 @@ class Game:
             # Riprende lo stato precedente se esiste
             if self.stato_corrente():
                 if self.stato_corrente() is not None:
+                    # Assicurati che lo stato abbia il contesto di gioco corretto
+                    if hasattr(self.stato_corrente(), 'set_game_context'):
+                        self.stato_corrente().set_game_context(self)
                     self.stato_corrente().riprendi(self)
                 else:
                     # Rimuovi anche questo stato se è None
@@ -139,6 +148,10 @@ class Game:
             nuovo_stato: Il nuovo stato che sostituirà quello corrente
         """
         try:
+            # Imposta il contesto di gioco nello stato prima di usarlo
+            if hasattr(nuovo_stato, 'set_game_context'):
+                nuovo_stato.set_game_context(self)
+                
             if self.stato_corrente():
                 self.stato_corrente().esci(self)
                 self.stato_stack.pop()
@@ -366,7 +379,16 @@ class Game:
             "attivo": self.attivo,
             "mappa_corrente": self.giocatore.mappa_corrente,
             "versione_gioco": "0.1.0",  # Aggiungiamo versione per compatibilità
-            "timestamp": __import__('time').time()  # Quando è stato fatto il salvataggio
+            "timestamp": __import__('time').time(),  # Quando è stato fatto il salvataggio
+            "mappe": self.gestore_mappe.to_dict()  # Salva lo stato completo delle mappe
+        }
+        
+        # Aggiungi tutti gli NPG mappa per mappa
+        data["npg"] = {
+            nome_mappa: {
+                str(posizione): npg.to_dict() for posizione, npg in mappa.npg.items()
+            }
+            for nome_mappa, mappa in self.gestore_mappe.mappe.items()
         }
         
         # Serializza e salva su file
@@ -387,23 +409,21 @@ class Game:
         """
         try:
             # Importa tutti i moduli di stato
-            import states.taverna
-            import states.dialogo
-            import states.combattimento
-            import states.mercato
-            import states.gestione_inventario
             from entities.giocatore import Giocatore
             from entities.npg import NPG
             from items.oggetto import Oggetto
             from items.oggetto_interattivo import OggettoInterattivo
             
-            # Mappa i nomi delle classi ai moduli corretti
-            moduli_stati = {
-                "TavernaState": states.taverna,
-                "DialogoState": states.dialogo,
-                "CombattimentoState": states.combattimento,
-                "MercatoState": states.mercato,
-                "GestioneInventarioState": states.gestione_inventario
+            # Mappa delle classi di stato ai loro moduli
+            mapping_stati = {
+                "TavernaState": "states.taverna",
+                "DialogoState": "states.dialogo", 
+                "CombattimentoState": "states.combattimento",
+                "MercatoState": "states.mercato",
+                "GestioneInventarioState": "states.gestione_inventario",
+                "ProvaAbilitaState": "states.prova_abilita",
+                "MappaState": "states.mappa_state",
+                "MenuState": "states.menu"
             }
 
             # Leggi il file di salvataggio
@@ -415,32 +435,52 @@ class Game:
 
             # Ricrea lo stack degli stati
             self.stato_stack = []
-            for stato_dato in data["stati"]:
-                # Supporta sia "type" (usato nel salva) che "tipo" (per compatibilità)
-                nome_classe = stato_dato.get("type", stato_dato.get("tipo"))
-                if nome_classe:
-                    # Usa il modulo corretto invece del nome classe in lowercase
-                    if nome_classe in moduli_stati:
-                        modulo = moduli_stati[nome_classe]
-                        classe_stato = getattr(modulo, nome_classe, None)
-                        if classe_stato and hasattr(classe_stato, 'from_dict'):
-                            # Supporto sia "dati" che il formato diretto
-                            dati = stato_dato.get("dati", stato_dato)
-                            istanza = classe_stato.from_dict(dati)
-                            self.stato_stack.append(istanza)
+            for stato_dato in data.get("stati", []):
+                # Ottieni il tipo dello stato
+                stato_tipo = stato_dato.get("type")
+                if not stato_tipo:
+                    continue
+                    
+                # Importa dinamicamente la classe di stato
+                try:
+                    # Utilizza il mapping per trovare il modulo corretto
+                    if stato_tipo in mapping_stati:
+                        modulo_nome = mapping_stati[stato_tipo]
+                        
+                        # Importa dinamicamente il modulo
+                        import importlib
+                        modulo = importlib.import_module(modulo_nome)
+                        
+                        # Ottieni la classe dallo stesso nome
+                        classe_stato = getattr(modulo, stato_tipo)
+                        
+                        # Ricostruisci lo stato usando from_dict
+                        if hasattr(classe_stato, 'from_dict'):
+                            stato = classe_stato.from_dict(stato_dato)
+                            self.stato_stack.append(stato)
                         else:
-                            self.io.mostra_messaggio(f"Avviso: la classe {nome_classe} non ha il metodo from_dict")
+                            self.io.mostra_messaggio(f"Avviso: {stato_tipo} non ha un metodo from_dict")
                     else:
-                        self.io.mostra_messaggio(f"Avviso: modulo per {nome_classe} non disponibile")
+                        self.io.mostra_messaggio(f"Avviso: mappatura non trovata per {stato_tipo}")
+                except Exception as e:
+                    self.io.mostra_messaggio(f"Errore nel caricamento dello stato {stato_tipo}: {e}")
+                    import traceback
+                    self.io.mostra_messaggio(traceback.format_exc())
+                    continue
 
-            # Ricrea NPC nelle mappe
-            for mappa_nome, npcs in data.get("npcs", {}).items():
-                mappa = self.gestore_mappe.ottieni_mappa(mappa_nome)
-                if mappa:
-                    for pos_str, npg_data in npcs.items():
-                        pos = eval(pos_str)
-                        npg = NPG.from_dict(npg_data)
-                        mappa.npg[pos] = npg
+            # Carica le mappe e gli oggetti interattivi se presenti
+            if "mappe" in data:
+                self.gestore_mappe.from_dict(data["mappe"])
+                self.io.mostra_messaggio("Mondo di gioco caricato con successo!")
+            else:
+                # Compatibilità con vecchi salvataggi - ricrea NPC nelle mappe
+                for mappa_nome, npcs in data.get("npg", {}).items():
+                    mappa = self.gestore_mappe.ottieni_mappa(mappa_nome)
+                    if mappa:
+                        for pos_str, npg_data in npcs.items():
+                            pos = ast.literal_eval(pos_str)
+                            npg = NPG.from_dict(npg_data)
+                            mappa.npg[pos] = npg
                         
             # Imposta la mappa corrente
             mappa_corrente = data.get("mappa_corrente", "taverna")
@@ -454,4 +494,6 @@ class Game:
             
         except Exception as e:
             self.io.mostra_messaggio(f"Errore durante il caricamento: {e}")
+            import traceback
+            self.io.mostra_messaggio(traceback.format_exc())
             return False
