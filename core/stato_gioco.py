@@ -38,6 +38,17 @@ class GameIOWeb(GameIO):
         """Restituisce tutto l'output accumulato come una stringa"""
         return "\n".join([msg["testo"] for msg in self.buffer])
     
+    def get_output_structured(self) -> list:
+        """
+        Restituisce l'output strutturato in formato lista di dizionari
+        Esempio:
+        [
+            {"tipo": "sistema", "testo": "Hai aperto il forziere"},
+            {"tipo": "narrativo", "testo": "Dentro trovi una pergamena"}
+        ]
+        """
+        return self.buffer
+    
     def clear(self):
         """Pulisce il buffer"""
         self.buffer = []
@@ -57,9 +68,8 @@ class StatoGioco:
             giocatore: L'oggetto giocatore
             stato_iniziale: Lo stato iniziale del gioco (es. TavernaState)
         """
-        self.game = Game(giocatore, stato_iniziale)
         self.io_buffer = GameIOWeb()
-        self.game.io = self.io_buffer
+        self.game = Game(giocatore, stato_iniziale, io_handler=self.io_buffer)
         self.ultimo_output = ""
     
     @classmethod
@@ -79,15 +89,17 @@ class StatoGioco:
         # Crea il giocatore dai dati serializzati
         giocatore = Giocatore.from_dict(data["giocatore"])
         
+        # Crea un'istanza io_buffer
+        io_buffer = GameIOWeb()
+        
         # Crea un'istanza di Game temporanea
-        gioco = Game(giocatore, None, e_temporaneo=True)
+        gioco = Game(giocatore, None, io_handler=io_buffer, e_temporaneo=True)
         gioco.carica()  # carica lo stato del gioco
         
         # Crea l'istanza di StatoGioco
         istanza = cls(giocatore, gioco.stato_corrente())
         istanza.game = gioco
-        istanza.io_buffer = GameIOWeb()
-        istanza.game.io = istanza.io_buffer
+        istanza.io_buffer = io_buffer
         istanza.ultimo_output = data.get("output", "")
         
         return istanza
@@ -179,6 +191,24 @@ class StatoGioco:
             bool: True se il salvataggio è avvenuto con successo, False altrimenti
         """
         try:
+            # Importa le classi degli stati instabili
+            from states.combattimento import CombattimentoState
+            from states.mercato import MercatoState
+            from states.dialogo import DialogoState
+            from states.prova_abilita import ProvaAbilitaState
+            
+            # Verifica se il gioco è in uno stato instabile
+            if isinstance(self.game.stato_corrente(), (CombattimentoState, ProvaAbilitaState, DialogoState)):
+                self.io_buffer.mostra_messaggio("Non puoi salvare durante un combattimento, una prova o un dialogo.")
+                return False
+                
+            # Verifica la fase nel MercatoState (solo durante le vendite non è consentito)
+            if isinstance(self.game.stato_corrente(), MercatoState) and hasattr(self.game.stato_corrente(), 'fase'):
+                fase_mercato = self.game.stato_corrente().fase
+                if fase_mercato in ["vendi_oggetto_lista", "vendi_oggetto_conferma", "compra_pozione"]:
+                    self.io_buffer.mostra_messaggio("Non puoi salvare durante una transazione al mercato.")
+                    return False
+            
             # Ottieni stato completo
             stato_corrente = self.get_stato_attuale()
             

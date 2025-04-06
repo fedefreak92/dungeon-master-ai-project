@@ -1,22 +1,24 @@
 from world.gestore_mappe import GestitoreMappe
 from core.io_interface import TerminalIO
 import json
+import ast  # Importa ast per literal_eval
 
 
 class Game:
-    def __init__(self, giocatore, stato_iniziale, e_temporaneo=False):
+    def __init__(self, giocatore, stato_iniziale, io_handler, e_temporaneo=False):
         """
         Inizializza il gioco con un giocatore e uno stato iniziale
         
         Args:
             giocatore: L'oggetto giocatore
             stato_iniziale: Lo stato iniziale del gioco
+            io_handler: Handler per input/output obbligatorio
             e_temporaneo: Se True, indica che è un'istanza temporanea solo per caricamento
         """
         self.giocatore = giocatore
         self.stato_stack = []  # Stack degli stati
         self.attivo = True
-        self.io = TerminalIO()
+        self.io = io_handler
         
         # Inizializza il gestore delle mappe
         self.gestore_mappe = GestitoreMappe()
@@ -30,13 +32,17 @@ class Game:
         if stato_iniziale is not None and not e_temporaneo:
             self.push_stato(stato_iniziale)
 
-    def imposta_mappa_iniziale(self, mappa_nome="taverna"):
+    def imposta_mappa_iniziale(self, mappa_nome=None):
         """
         Imposta la mappa iniziale per il giocatore
         
         Args:
-            mappa_nome (str): Nome della mappa iniziale (default: "taverna")
+            mappa_nome (str, optional): Nome della mappa iniziale. Se None, non imposta alcuna mappa.
         """
+        if mappa_nome is None:
+            # Non impostiamo una mappa di default, lasciamo la scelta al giocatore
+            return True
+            
         mappa = self.gestore_mappe.ottieni_mappa(mappa_nome)
         if mappa:
             self.gestore_mappe.imposta_mappa_attuale(mappa_nome)
@@ -83,6 +89,10 @@ class Game:
             if nuovo_stato is None:
                 self.io.mostra_messaggio("Errore: tentativo di aggiungere uno stato nullo.")
                 return
+            
+            # Imposta il contesto di gioco nello stato prima di usarlo
+            if hasattr(nuovo_stato, 'set_game_context'):
+                nuovo_stato.set_game_context(self)
                 
             if self.stato_corrente():
                 self.stato_corrente().pausa(self)  # Mette in pausa lo stato corrente
@@ -114,6 +124,9 @@ class Game:
             # Riprende lo stato precedente se esiste
             if self.stato_corrente():
                 if self.stato_corrente() is not None:
+                    # Assicurati che lo stato abbia il contesto di gioco corretto
+                    if hasattr(self.stato_corrente(), 'set_game_context'):
+                        self.stato_corrente().set_game_context(self)
                     self.stato_corrente().riprendi(self)
                 else:
                     # Rimuovi anche questo stato se è None
@@ -139,6 +152,10 @@ class Game:
             nuovo_stato: Il nuovo stato che sostituirà quello corrente
         """
         try:
+            # Imposta il contesto di gioco nello stato prima di usarlo
+            if hasattr(nuovo_stato, 'set_game_context'):
+                nuovo_stato.set_game_context(self)
+                
             if self.stato_corrente():
                 self.stato_corrente().esci(self)
                 self.stato_stack.pop()
@@ -152,12 +169,24 @@ class Game:
         """
         Esegue il loop principale del gioco
         """
-        while self.attivo and self.stato_corrente():
+        self.attivo = True  # Assicuriamoci che il gioco sia attivo all'inizio
+        
+        while self.attivo:
+            # Verifica che ci sia almeno uno stato nello stack
+            if not self.stato_corrente():
+                self.io.mostra_messaggio("Nessuno stato attivo. Il gioco terminerà.")
+                break
+                
             try:
+                # Esegue lo stato corrente
                 self.stato_corrente().esegui(self)
             except Exception as e:
                 self.io.mostra_messaggio(f"Errore durante l'esecuzione dello stato: {e}")
+                import traceback
+                self.io.mostra_messaggio(traceback.format_exc())
                 self.pop_stato()  # Gestione automatica degli errori
+                
+                # Se non ci sono più stati, termina il gioco
                 if not self.stato_stack:
                     self.attivo = False
 
@@ -263,117 +292,154 @@ class Game:
         
         Args:
             file_path (str): Percorso del file di salvataggio
-        """
-        # Ottieni dati serializzabili del giocatore
-        if hasattr(self.giocatore, 'to_dict'):
-            giocatore_data = self.giocatore.to_dict()
-        else:
-            # Fallback al salvataggio base
-            inventario_data = []
-            for oggetto in self.giocatore.inventario:
-                if hasattr(oggetto, 'to_dict') and callable(getattr(oggetto, 'to_dict')):
-                    inventario_data.append(oggetto.to_dict())
-                else:
-                    # Salva tutti gli attributi dell'oggetto
-                    oggetto_data = {
-                        "nome": getattr(oggetto, 'nome', 'Oggetto sconosciuto'),
-                        "tipo": getattr(oggetto, 'tipo', 'vario'),
-                        "descrizione": getattr(oggetto, 'descrizione', ''),
-                        "valore": getattr(oggetto, 'valore', 0),
-                        "effetto": getattr(oggetto, 'effetto', {}),
-                    }
-                    inventario_data.append(oggetto_data)
-                    
-            # Serializza arma equipaggiata
-            arma_data = None
-            if hasattr(self.giocatore, 'arma') and self.giocatore.arma:
-                if hasattr(self.giocatore.arma, 'to_dict'):
-                    arma_data = self.giocatore.arma.to_dict()
-                else:
-                    arma_data = {
-                        "nome": getattr(self.giocatore.arma, 'nome', 'Arma sconosciuta'),
-                        "tipo": "arma",
-                        "descrizione": getattr(self.giocatore.arma, 'descrizione', ''),
-                        "valore": getattr(self.giocatore.arma, 'valore', 0),
-                        "effetto": getattr(self.giocatore.arma, 'effetto', {}),
-                    }
             
-            # Serializza armatura equipaggiata
-            armatura_data = None
-            if hasattr(self.giocatore, 'armatura') and self.giocatore.armatura:
-                if hasattr(self.giocatore.armatura, 'to_dict'):
-                    armatura_data = self.giocatore.armatura.to_dict()
-                else:
-                    armatura_data = {
-                        "nome": getattr(self.giocatore.armatura, 'nome', 'Armatura sconosciuta'),
-                        "tipo": "armatura",
-                        "descrizione": getattr(self.giocatore.armatura, 'descrizione', ''),
-                        "valore": getattr(self.giocatore.armatura, 'valore', 0),
-                        "effetto": getattr(self.giocatore.armatura, 'effetto', {}),
-                    }
+        Returns:
+            bool: True se il salvataggio è riuscito, False altrimenti
+        """
+        try:
+            # Importa il modulo di configurazione
+            from util.config import get_save_path, create_backup, SAVE_FORMAT_VERSION
+            import logging
+            import json
+
+            logger = logging.getLogger("gioco_rpg")
+            
+            # Converti il percorso usando il modulo di configurazione
+            save_path = get_save_path(file_path)
+            
+            # Crea un backup se il file esiste già
+            if save_path.exists():
+                backup_path = create_backup(save_path)
+                if backup_path:
+                    logger.info(f"Creato backup del salvataggio precedente: {backup_path}")
                     
-            # Serializza accessori
-            accessori_data = []
-            if hasattr(self.giocatore, 'accessori'):
-                for acc in self.giocatore.accessori:
-                    if hasattr(acc, 'to_dict'):
-                        accessori_data.append(acc.to_dict())
+            # Ottieni dati serializzabili del giocatore
+            if hasattr(self.giocatore, 'to_dict'):
+                giocatore_data = self.giocatore.to_dict()
+            else:
+                # Fallback al salvataggio base
+                inventario_data = []
+                for oggetto in self.giocatore.inventario:
+                    if hasattr(oggetto, 'to_dict') and callable(getattr(oggetto, 'to_dict')):
+                        inventario_data.append(oggetto.to_dict())
                     else:
-                        acc_data = {
-                            "nome": getattr(acc, 'nome', 'Accessorio sconosciuto'),
-                            "tipo": "accessorio",
-                            "descrizione": getattr(acc, 'descrizione', ''),
-                            "valore": getattr(acc, 'valore', 0),
-                            "effetto": getattr(acc, 'effetto', {}),
+                        # Salva tutti gli attributi dell'oggetto
+                        oggetto_data = {
+                            "nome": getattr(oggetto, 'nome', 'Oggetto sconosciuto'),
+                            "tipo": getattr(oggetto, 'tipo', 'vario'),
+                            "descrizione": getattr(oggetto, 'descrizione', ''),
+                            "valore": getattr(oggetto, 'valore', 0),
+                            "effetto": getattr(oggetto, 'effetto', {}),
                         }
-                        accessori_data.append(acc_data)
-                    
-            giocatore_data = {
-                "nome": self.giocatore.nome,
-                "classe": self.giocatore.classe,
-                "hp": self.giocatore.hp,
-                "hp_max": getattr(self.giocatore, 'hp_max', self.giocatore.hp),
-                "mappa": self.giocatore.mappa_corrente,
-                "posizione": [self.giocatore.x, self.giocatore.y],
-                "oro": getattr(self.giocatore, 'oro', 0),
-                "inventario": inventario_data,
-                "arma": arma_data,
-                "armatura": armatura_data,
-                "accessori": accessori_data,
-                "forza_base": getattr(self.giocatore, 'forza_base', 10),
-                "destrezza_base": getattr(self.giocatore, 'destrezza_base', 10),
-                "costituzione_base": getattr(self.giocatore, 'costituzione_base', 10),
-                "intelligenza_base": getattr(self.giocatore, 'intelligenza_base', 10),
-                "saggezza_base": getattr(self.giocatore, 'saggezza_base', 10),
-                "carisma_base": getattr(self.giocatore, 'carisma_base', 10),
-                "livello": getattr(self.giocatore, 'livello', 1),
-                "esperienza": getattr(self.giocatore, 'esperienza', 0),
+                        inventario_data.append(oggetto_data)
+                        
+                # Serializza arma equipaggiata
+                arma_data = None
+                if hasattr(self.giocatore, 'arma') and self.giocatore.arma:
+                    if hasattr(self.giocatore.arma, 'to_dict'):
+                        arma_data = self.giocatore.arma.to_dict()
+                    else:
+                        arma_data = {
+                            "nome": getattr(self.giocatore.arma, 'nome', 'Arma sconosciuta'),
+                            "tipo": "arma",
+                            "descrizione": getattr(self.giocatore.arma, 'descrizione', ''),
+                            "valore": getattr(self.giocatore.arma, 'valore', 0),
+                            "effetto": getattr(self.giocatore.arma, 'effetto', {}),
+                        }
+                
+                # Serializza armatura equipaggiata
+                armatura_data = None
+                if hasattr(self.giocatore, 'armatura') and self.giocatore.armatura:
+                    if hasattr(self.giocatore.armatura, 'to_dict'):
+                        armatura_data = self.giocatore.armatura.to_dict()
+                    else:
+                        armatura_data = {
+                            "nome": getattr(self.giocatore.armatura, 'nome', 'Armatura sconosciuta'),
+                            "tipo": "armatura",
+                            "descrizione": getattr(self.giocatore.armatura, 'descrizione', ''),
+                            "valore": getattr(self.giocatore.armatura, 'valore', 0),
+                            "effetto": getattr(self.giocatore.armatura, 'effetto', {}),
+                        }
+                        
+                # Serializza accessori
+                accessori_data = []
+                if hasattr(self.giocatore, 'accessori'):
+                    for acc in self.giocatore.accessori:
+                        if hasattr(acc, 'to_dict'):
+                            accessori_data.append(acc.to_dict())
+                        else:
+                            acc_data = {
+                                "nome": getattr(acc, 'nome', 'Accessorio sconosciuto'),
+                                "tipo": "accessorio",
+                                "descrizione": getattr(acc, 'descrizione', ''),
+                                "valore": getattr(acc, 'valore', 0),
+                                "effetto": getattr(acc, 'effetto', {}),
+                            }
+                            accessori_data.append(acc_data)
+                        
+                giocatore_data = {
+                    "nome": self.giocatore.nome,
+                    "classe": self.giocatore.classe,
+                    "hp": self.giocatore.hp,
+                    "hp_max": getattr(self.giocatore, 'hp_max', self.giocatore.hp),
+                    "mappa": self.giocatore.mappa_corrente,
+                    "posizione": [self.giocatore.x, self.giocatore.y],
+                    "oro": getattr(self.giocatore, 'oro', 0),
+                    "inventario": inventario_data,
+                    "arma": arma_data,
+                    "armatura": armatura_data,
+                    "accessori": accessori_data,
+                    "forza_base": getattr(self.giocatore, 'forza_base', 10),
+                    "destrezza_base": getattr(self.giocatore, 'destrezza_base', 10),
+                    "costituzione_base": getattr(self.giocatore, 'costituzione_base', 10),
+                    "intelligenza_base": getattr(self.giocatore, 'intelligenza_base', 10),
+                    "saggezza_base": getattr(self.giocatore, 'saggezza_base', 10),
+                    "carisma_base": getattr(self.giocatore, 'carisma_base', 10),
+                    "livello": getattr(self.giocatore, 'livello', 1),
+                    "esperienza": getattr(self.giocatore, 'esperienza', 0),
+                }
+                
+            # Serializza lo stack degli stati
+            stati_data = []
+            for stato in self.stato_stack:
+                if hasattr(stato, 'to_dict'):
+                    stati_data.append(stato.to_dict())
+                else:
+                    # Fallback per stati che non hanno to_dict
+                    stati_data.append({"type": stato.__class__.__name__})
+            
+            # Componi il dizionario completo
+            data = {
+                "giocatore": giocatore_data,
+                "stati": stati_data,
+                "attivo": self.attivo,
+                "mappa_corrente": self.giocatore.mappa_corrente,
+                "versione_gioco": SAVE_FORMAT_VERSION,  # Usa la versione dal modulo config
+                "timestamp": __import__('time').time(),  # Quando è stato fatto il salvataggio
+                "mappe": self.gestore_mappe.to_dict()  # Salva lo stato completo delle mappe
             }
             
-        # Serializza lo stack degli stati
-        stati_data = []
-        for stato in self.stato_stack:
-            if hasattr(stato, 'to_dict'):
-                stati_data.append(stato.to_dict())
-            else:
-                # Fallback per stati che non hanno to_dict
-                stati_data.append({"type": stato.__class__.__name__})
-        
-        # Componi il dizionario completo
-        data = {
-            "giocatore": giocatore_data,
-            "stati": stati_data,
-            "attivo": self.attivo,
-            "mappa_corrente": self.giocatore.mappa_corrente,
-            "versione_gioco": "0.1.0",  # Aggiungiamo versione per compatibilità
-            "timestamp": __import__('time').time()  # Quando è stato fatto il salvataggio
-        }
-        
-        # Serializza e salva su file
-        with open(file_path, 'w') as f:
-            json.dump(data, f, indent=4)
+            # Aggiungi tutti gli NPG mappa per mappa
+            data["npg"] = {
+                nome_mappa: {
+                    str(posizione): npg.to_dict() for posizione, npg in mappa.npg.items()
+                }
+                for nome_mappa, mappa in self.gestore_mappe.mappe.items()
+            }
             
-        return True
+            # Serializza e salva su file
+            save_path.parent.mkdir(exist_ok=True, parents=True)  # Assicura che la directory esista
+            with open(save_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+                
+            logger.info(f"Salvataggio completato: {save_path}")
+            return True
+            
+        except Exception as e:
+            import traceback
+            logging.getLogger("gioco_rpg").error(f"Errore durante il salvataggio: {e}")
+            logging.getLogger("gioco_rpg").error(traceback.format_exc())
+            return False
     
     def carica(self, file_path="salvataggio.json"):
         """
@@ -386,61 +452,134 @@ class Game:
             bool: True se il caricamento è riuscito, False altrimenti
         """
         try:
+            # Importa moduli
+            from util.config import get_save_path, validate_save_data, migrate_save_data
+            import logging
+            import json
+            
+            logger = logging.getLogger("gioco_rpg")
+            save_path = get_save_path(file_path)
+            
+            # Verifica esistenza file
+            if not save_path.exists():
+                logger.error(f"File di salvataggio non trovato: {save_path}")
+                self.io.mostra_messaggio(f"File di salvataggio non trovato: {save_path}")
+                return False
+            
+            # Carica e valida dati
+            try:
+                with open(save_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            except json.JSONDecodeError as e:
+                logger.error(f"File di salvataggio non valido (JSON errato): {e}")
+                self.io.mostra_messaggio("File di salvataggio danneggiato")
+                return False
+                
+            # Valida dati caricati
+            valid, message = validate_save_data(data)
+            if not valid:
+                logger.error(message)
+                self.io.mostra_messaggio(message)
+                return False
+                
+            # Migra dati se necessario
+            data = migrate_save_data(data)
+            
+            # Registry per oggetti già caricati (evita riferimenti circolari)
+            # Da usare solo con le classi che supportano il parametro
+            loaded_objects = {}
+            
             # Importa tutti i moduli di stato
-            import states.taverna
-            import states.dialogo
-            import states.combattimento
-            import states.mercato
-            import states.gestione_inventario
             from entities.giocatore import Giocatore
             from entities.npg import NPG
             from items.oggetto import Oggetto
             from items.oggetto_interattivo import OggettoInterattivo
             
-            # Mappa i nomi delle classi ai moduli corretti
-            moduli_stati = {
-                "TavernaState": states.taverna,
-                "DialogoState": states.dialogo,
-                "CombattimentoState": states.combattimento,
-                "MercatoState": states.mercato,
-                "GestioneInventarioState": states.gestione_inventario
+            # Mappa delle classi di stato ai loro moduli
+            mapping_stati = {
+                "TavernaState": "states.taverna",
+                "DialogoState": "states.dialogo", 
+                "CombattimentoState": "states.combattimento",
+                "MercatoState": "states.mercato",
+                "GestioneInventarioState": "states.gestione_inventario",
+                "ProvaAbilitaState": "states.prova_abilita",
+                "MappaState": "states.mappa_state",
+                "MenuState": "states.menu"
             }
-
-            # Leggi il file di salvataggio
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-
-            # Ricrea il giocatore
-            self.giocatore = Giocatore.from_dict(data["giocatore"])
+            
+            # Carica il giocatore
+            try:
+                # Usa direttamente la versione standard senza loaded_objects per il giocatore
+                self.giocatore = Giocatore.from_dict(data["giocatore"])
+            except KeyError:
+                logger.error("Dati del giocatore mancanti o incompleti nel salvataggio")
+                self.io.mostra_messaggio("Dati del giocatore mancanti o incompleti nel salvataggio")
+                return False
+            except Exception as e:
+                logger.error(f"Errore nella creazione del giocatore: {str(e)}")
+                self.io.mostra_messaggio(f"Errore nella creazione del giocatore: {str(e)}")
+                return False
 
             # Ricrea lo stack degli stati
             self.stato_stack = []
-            for stato_dato in data["stati"]:
-                # Supporta sia "type" (usato nel salva) che "tipo" (per compatibilità)
-                nome_classe = stato_dato.get("type", stato_dato.get("tipo"))
-                if nome_classe:
-                    # Usa il modulo corretto invece del nome classe in lowercase
-                    if nome_classe in moduli_stati:
-                        modulo = moduli_stati[nome_classe]
-                        classe_stato = getattr(modulo, nome_classe, None)
-                        if classe_stato and hasattr(classe_stato, 'from_dict'):
-                            # Supporto sia "dati" che il formato diretto
-                            dati = stato_dato.get("dati", stato_dato)
-                            istanza = classe_stato.from_dict(dati)
-                            self.stato_stack.append(istanza)
+            for stato_dato in data.get("stati", []):
+                # Ottieni il tipo dello stato
+                stato_tipo = stato_dato.get("type")
+                if not stato_tipo:
+                    continue
+                    
+                # Importa dinamicamente la classe di stato
+                try:
+                    # Utilizza il mapping per trovare il modulo corretto
+                    if stato_tipo in mapping_stati:
+                        modulo_nome = mapping_stati[stato_tipo]
+                        
+                        # Importa dinamicamente il modulo
+                        import importlib
+                        modulo = importlib.import_module(modulo_nome)
+                        
+                        # Ottieni la classe dallo stesso nome
+                        classe_stato = getattr(modulo, stato_tipo)
+                        
+                        # Ricostruisci lo stato usando from_dict
+                        if hasattr(classe_stato, 'from_dict'):
+                            # Usa semplicemente la versione standard
+                            stato = classe_stato.from_dict(stato_dato)
+                            self.stato_stack.append(stato)
                         else:
-                            self.io.mostra_messaggio(f"Avviso: la classe {nome_classe} non ha il metodo from_dict")
+                            logger.warning(f"Stato {stato_tipo} non ha un metodo from_dict")
+                            self.io.mostra_messaggio(f"Avviso: {stato_tipo} non ha un metodo from_dict")
                     else:
-                        self.io.mostra_messaggio(f"Avviso: modulo per {nome_classe} non disponibile")
+                        logger.warning(f"Mappatura non trovata per {stato_tipo}")
+                        self.io.mostra_messaggio(f"Avviso: mappatura non trovata per {stato_tipo}")
+                except Exception as e:
+                    logger.error(f"Errore nel caricamento dello stato {stato_tipo}: {str(e)}")
+                    import traceback
+                    logger.error(traceback.format_exc())
+                    continue
 
-            # Ricrea NPC nelle mappe
-            for mappa_nome, npcs in data.get("npcs", {}).items():
-                mappa = self.gestore_mappe.ottieni_mappa(mappa_nome)
-                if mappa:
-                    for pos_str, npg_data in npcs.items():
-                        pos = eval(pos_str)
-                        npg = NPG.from_dict(npg_data)
-                        mappa.npg[pos] = npg
+            # Carica le mappe e gli oggetti interattivi se presenti
+            if "mappe" in data:
+                try:
+                    self.gestore_mappe.from_dict(data["mappe"])
+                    logger.info("Mondo di gioco caricato con successo!")
+                except Exception as e:
+                    logger.error(f"Errore nel caricamento delle mappe: {str(e)}")
+                    import traceback
+                    logger.error(traceback.format_exc())
+            else:
+                # Compatibilità con vecchi salvataggi - ricrea NPC nelle mappe
+                for mappa_nome, npcs in data.get("npg", {}).items():
+                    mappa = self.gestore_mappe.ottieni_mappa(mappa_nome)
+                    if mappa:
+                        for pos_str, npg_data in npcs.items():
+                            try:
+                                import ast
+                                pos = ast.literal_eval(pos_str)
+                                npg = NPG.from_dict(npg_data)
+                                mappa.npg[pos] = npg
+                            except Exception as e:
+                                logger.error(f"Errore nel caricamento dell'NPG in posizione {pos_str}: {str(e)}")
                         
             # Imposta la mappa corrente
             mappa_corrente = data.get("mappa_corrente", "taverna")
@@ -449,9 +588,17 @@ class Game:
             # Imposta lo stato attivo
             self.attivo = data.get("attivo", True)
             
+            # Pulisci vecchi backup
+            from util.config import clean_old_backups
+            clean_old_backups()
+            
+            logger.info(f"Partita di {self.giocatore.nome} caricata con successo!")
             self.io.mostra_messaggio(f"Partita di {self.giocatore.nome} caricata con successo!")
             return True
             
         except Exception as e:
+            import traceback
+            logging.getLogger("gioco_rpg").error(f"Errore durante il caricamento: {e}")
+            logging.getLogger("gioco_rpg").error(traceback.format_exc())
             self.io.mostra_messaggio(f"Errore durante il caricamento: {e}")
             return False
