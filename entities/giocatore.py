@@ -1,5 +1,5 @@
 from items.oggetto import Oggetto
-from entities.entita import Entita, ABILITA_ASSOCIATE, io
+from entities.entita import Entita, ABILITA_ASSOCIATE
 
 class Giocatore(Entita):
     def __init__(self, nome, classe):
@@ -110,27 +110,20 @@ class Giocatore(Entita):
             self.inventario.append(guanti)
             guanti.equipaggia(self)
     
-    def attacca(self, nemico):
-        # Utilizziamo prima l'implementazione di base da Entita
-        # se il nemico ha subisci_danno() implementato
-        if hasattr(nemico, 'subisci_danno'):
-            return super().attacca(nemico)
-        
-        # Altrimenti usiamo il vecchio codice per compatibilità
-        danno = self.forza 
-        io.mostra_messaggio(f"{self.nome} attacca {nemico.nome} e infligge {danno} danni!")
-        
-        if hasattr(nemico, 'ferisci'):
-            nemico.ferisci(danno)
-        else:
-            nemico.hp -= danno
+    def attacca(self, nemico, gioco=None):
+        """Attacca un nemico utilizzando il metodo unificato"""
+        # Usa il metodo della classe base per gestire l'attacco
+        return super().attacca(nemico, gioco)
     
-    def _sali_livello(self):
+    def _sali_livello(self, gioco=None):
         """Override del metodo della classe base per un messaggio personalizzato"""
         # Chiamiamo prima il metodo della classe base
-        super()._sali_livello()
+        super()._sali_livello(gioco)
         # Poi aggiungiamo il nostro messaggio personalizzato
-        io.mostra_messaggio("Sei diventato più forte!")
+        
+        # Aggiungi il messaggio usando l'interfaccia I/O del gioco
+        if gioco:
+            gioco.io.mostra_messaggio("Sei diventato più forte!")
 
     def muovi(self, dx, dy, gestore_mappe):
         """
@@ -149,38 +142,9 @@ class Giocatore(Entita):
         
         return gestore_mappe.muovi_giocatore(self, dx, dy)
     
-    def interagisci_con_oggetto_adiacente(self, gestore_mappe):
+    def interagisci_con_oggetto_adiacente(self, gestore_mappe, gioco=None):
         """
         Interagisce con l'oggetto adiacente al giocatore, se presente
-        
-        Args:
-            gestore_mappe: Gestore delle mappe di gioco
-            
-        Returns:
-            bool: True se è avvenuta un'interazione, False altrimenti
-        """
-        if not gestore_mappe or not self.mappa_corrente:
-            return False
-        
-        mappa = gestore_mappe.ottieni_mappa(self.mappa_corrente)
-        if not mappa:
-            return False
-        
-        # Controlla in tutte le direzioni adiacenti
-        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
-            x, y = self.x + dx, self.y + dy
-            oggetto = mappa.ottieni_oggetto_a(x, y)
-            if oggetto:
-                io.mostra_messaggio(f"Interagisci con {oggetto.nome}")
-                oggetto.interagisci(self)
-                return True
-            
-        io.mostra_messaggio("Non ci sono oggetti con cui interagire nelle vicinanze.")
-        return False
-    
-    def interagisci_con_npg_adiacente(self, gestore_mappe, gioco):
-        """
-        Interagisce con l'NPG adiacente al giocatore, se presente
         
         Args:
             gestore_mappe: Gestore delle mappe di gioco
@@ -199,14 +163,51 @@ class Giocatore(Entita):
         # Controlla in tutte le direzioni adiacenti
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
             x, y = self.x + dx, self.y + dy
-            npg = mappa.ottieni_npg_a(x, y)
-            if npg:
-                io.mostra_messaggio(f"Parli con {npg.nome}")
-                from test_state.stati.dialogo import DialogoState
-                gioco.push_stato(DialogoState(npg))
+            oggetto = mappa.ottieni_oggetto_a(x, y)
+            if oggetto:
+                if gioco and gioco.io:
+                    gioco.io.mostra_messaggio(f"Interagisci con {oggetto.nome}")
+                oggetto.interagisci(self)
                 return True
             
-        io.mostra_messaggio("Non ci sono personaggi con cui parlare nelle vicinanze.")
+        if gioco and gioco.io:
+            gioco.io.mostra_messaggio("Non ci sono oggetti con cui interagire nelle vicinanze.")
+        return False
+    
+    def interagisci_con_npg_adiacente(self, gestore_mappe, gioco=None):
+        """
+        Interagisce con l'NPG adiacente al giocatore, se presente
+        
+        Args:
+            gestore_mappe: Gestore delle mappe di gioco
+            gioco: Riferimento all'oggetto gioco principale (opzionale se memorizzato)
+            
+        Returns:
+            bool: True se è avvenuta un'interazione, False altrimenti
+        """
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
+        if not gestore_mappe or not self.mappa_corrente:
+            return False
+        
+        mappa = gestore_mappe.ottieni_mappa(self.mappa_corrente)
+        if not mappa:
+            return False
+        
+        # Controlla in tutte le direzioni adiacenti
+        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            x, y = self.x + dx, self.y + dy
+            npg = mappa.ottieni_npg_a(x, y)
+            if npg:
+                if game_ctx and game_ctx.io:
+                    game_ctx.io.mostra_messaggio(f"Parli con {npg.nome}")
+                from states.dialogo import DialogoState
+                game_ctx.push_stato(DialogoState(npg))
+                return True
+            
+        if game_ctx and game_ctx.io:
+            game_ctx.io.mostra_messaggio("Non ci sono personaggi con cui parlare nelle vicinanze.")
         return False
     
     def ottieni_oggetti_vicini(self, gestore_mappe, raggio=1):

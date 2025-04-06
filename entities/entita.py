@@ -1,9 +1,6 @@
 import random
 from core.io_interface import TerminalIO
 
-# Istanza globale dell'interfaccia di I/O
-io = TerminalIO()
-
 # Mappa delle abilità associate alle caratteristiche (D&D 5e style)
 ABILITA_ASSOCIATE = {
     "acrobazia": "destrezza",
@@ -74,21 +71,57 @@ class Entita:
         self.armatura = None
         self.accessori = []
         
-    def subisci_danno(self, danno):
+        # Contesto di gioco
+        self.gioco = None
+        
+    def set_game_context(self, gioco):
+        """
+        Imposta il contesto di gioco per questa entità.
+        
+        Args:
+            gioco: L'istanza del gioco
+        """
+        self.gioco = gioco
+        
+        # Propaga il contesto agli oggetti contenuti nell'inventario
+        for item in self.inventario:
+            if hasattr(item, 'set_game_context'):
+                item.set_game_context(gioco)
+                
+    def subisci_danno(self, danno, gioco=None):
         """Metodo unificato per subire danno, considerando la difesa"""
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         danno_effettivo = max(1, danno - self.difesa)
         self.hp = max(0, self.hp - danno_effettivo)
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} subisce {danno_effettivo} danni!")
+            
         return self.hp > 0
         
-    def attacca(self, bersaglio):
+    def attacca(self, bersaglio, gioco=None):
         """Metodo unificato per attaccare"""
-        danno = self.modificatore_forza
-        io.mostra_messaggio(f"{self.nome} attacca {bersaglio.nome} e infligge {danno} danni!")
-        return bersaglio.subisci_danno(danno)
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
         
-    def cura(self, quantita):
+        danno = self.modificatore_forza
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} attacca {bersaglio.nome} e infligge {danno} danni!")
+            
+        return bersaglio.subisci_danno(danno, game_ctx)
+        
+    def cura(self, quantita, gioco=None):
         """Cura l'entità"""
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         self.hp = min(self.hp_max, self.hp + quantita)
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} recupera {quantita} punti vita!")
         
     def aggiungi_item(self, item):
         """Aggiunge un item all'inventario"""
@@ -106,17 +139,25 @@ class Entita:
         """Verifica se l'entità è viva"""
         return self.hp > 0
         
-    def ferisci(self, danno):
+    def ferisci(self, danno, gioco):
         """Metodo alternativo per subire danno, per compatibilità"""
-        return self.subisci_danno(danno)
+        return self.subisci_danno(danno, gioco)
         
-    def aggiungi_oro(self, quantita):
+    def aggiungi_oro(self, quantita, gioco=None):
         """Aggiunge oro all'entità"""
-        self.oro += quantita
-        io.mostra_messaggio(f"{self.nome} ha ricevuto {quantita} monete d'oro! (Totale: {self.oro})")
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
         
-    def guadagna_esperienza(self, quantita):
+        self.oro += quantita
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} ha ricevuto {quantita} monete d'oro! (Totale: {self.oro})")
+        
+    def guadagna_esperienza(self, quantita, gioco=None):
         """Aggiunge esperienza e verifica se è possibile salire di livello"""
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         self.esperienza += quantita
         
         # Verifica salita di livello: 100 * livello attuale
@@ -125,12 +166,15 @@ class Entita:
         if self.esperienza >= esperienza_necessaria:
             self.livello += 1
             self.esperienza -= esperienza_necessaria
-            self._sali_livello()
+            self._sali_livello(game_ctx)
             return True
         return False
         
-    def _sali_livello(self):
+    def _sali_livello(self, gioco=None):
         """Applica i miglioramenti per il salire di livello"""
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         self.hp_max += 5
         self.hp = self.hp_max  # Cura completamente quando sale di livello
         
@@ -146,10 +190,15 @@ class Entita:
         setattr(self, nome_modificatore, self.calcola_modificatore(getattr(self, caratteristica_da_aumentare)))
         
         self.difesa += 1
-        io.mostra_messaggio(f"\n*** {self.nome} è salito al livello {self.livello}! ***")
-        io.mostra_messaggio(f"La sua {caratteristica_da_aumentare.replace('_base', '')}, difesa e salute massima sono aumentate!")
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"\n*** {self.nome} è salito al livello {self.livello}! ***")
+            game_ctx.io.mostra_messaggio(f"La sua {caratteristica_da_aumentare.replace('_base', '')}, difesa e salute massima sono aumentate!")
 
-    def prova_abilita(self, abilita, difficolta):
+    def prova_abilita(self, abilita, difficolta, gioco=None):
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         dado = Dado(20)
         tiro = dado.tira()
         
@@ -163,11 +212,14 @@ class Entita:
             modificatore = getattr(self, f"modificatore_{abilita}", 0)
             
         risultato = tiro + modificatore
-        io.mostra_messaggio(f"{self.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
+            
         return risultato >= difficolta
 
-    def tiro_salvezza(self, tipo, difficolta):
-        return self.prova_abilita(tipo, difficolta)
+    def tiro_salvezza(self, tipo, difficolta, gioco=None):
+        return self.prova_abilita(tipo, difficolta, gioco)
 
     def calcola_modificatore(self, valore):
         return (valore - 10) // 2
@@ -257,11 +309,11 @@ class Entita:
             return (self.x, self.y)
         return None
 
-    def modificatore_abilita(self, nome_abilita):
+    def modificatore_abilita(self, nome_abilita, gioco):
         """Calcola il modificatore totale di un'abilità considerando la competenza"""
         caratteristica = ABILITA_ASSOCIATE.get(nome_abilita.lower())
         if not caratteristica:
-            io.mostra_messaggio(f"Abilità sconosciuta: {nome_abilita}")
+            gioco.io.mostra_messaggio(f"Abilità sconosciuta: {nome_abilita}")
             return 0
 
         modificatore_base = getattr(self, f"modificatore_{caratteristica}", 0)

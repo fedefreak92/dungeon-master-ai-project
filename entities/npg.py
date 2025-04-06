@@ -489,35 +489,25 @@ class NPG(Entita):
         return info
 
     def attacca(self, bersaglio, gioco=None):
-        """Override del metodo attacca per retrocompatibilità"""
-        # Prima prova a usare l'implementazione base
-        if hasattr(bersaglio, 'subisci_danno'):
-            return super().attacca(bersaglio)
-        
-        # Altrimenti usa il vecchio codice
-        danno = self.forza 
-        if gioco:
-            gioco.io.mostra_messaggio(f"{self.nome} attacca {bersaglio.nome} e infligge {danno} danni!")
-        
-        if hasattr(bersaglio, 'ferisci'):
-            bersaglio.ferisci(danno)
-        else:
-            bersaglio.hp -= danno
+        """Attacca un bersaglio utilizzando il metodo unificato"""
+        # Usa il metodo della classe base per gestire l'attacco
+        return super().attacca(bersaglio, gioco)
 
-    def trasferisci_oro(self, giocatore, quantita):
+    def trasferisci_oro(self, giocatore, quantita, gioco=None):
         """
         Trasferisce oro dall'NPG al giocatore
         
         Args:
             giocatore (Giocatore): Il giocatore che riceve l'oro
             quantita (int): Quantità di oro da trasferire
+            gioco: Riferimento all'oggetto gioco principale
             
         Returns:
             bool: True se il trasferimento è riuscito, False se l'NPG non ha abbastanza oro
         """
         if self.oro >= quantita:
             self.oro -= quantita
-            giocatore.aggiungi_oro(quantita)
+            giocatore.aggiungi_oro(quantita, gioco)
             return True
         return False
 

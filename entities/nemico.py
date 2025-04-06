@@ -10,20 +10,9 @@ class Nemico(Entita):
         self.oro = 10       # Oro base che il nemico può lasciare
     
     def attacca(self, giocatore, gioco=None):
-        """Override del metodo attacca per retrocompatibilità"""
-        # Prima prova a usare l'implementazione base
-        if hasattr(giocatore, 'subisci_danno'):
-            return super().attacca(giocatore)
+        """Attacca il giocatore utilizzando il metodo unificato"""
+        # Ottieni l'interfaccia I/O da gioco se disponibile
+        io_interface = gioco.io if gioco else None
         
-        # Altrimenti usa il vecchio codice
-        messaggio = f"{self.nome} ti attacca e ti infligge {self.modificatore_forza} danni!"
-        if gioco:
-            gioco.io.mostra_messaggio(messaggio)
-        else:
-            from entities.entita import io
-            io.mostra_messaggio(messaggio)  # Fallback se gioco non è fornito
-        
-        if hasattr(giocatore, 'ferisci'):
-            giocatore.ferisci(self.modificatore_forza)
-        else:
-            giocatore.hp -= self.modificatore_forza
+        # Usa il metodo della classe base per gestire l'attacco
+        return super().attacca(giocatore, io_interface)
