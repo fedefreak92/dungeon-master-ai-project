@@ -1,4 +1,5 @@
 from util.dado import Dado
+from util.data_manager import get_data_manager
 
 class OggettoInterattivo:
     def __init__(self, nome, descrizione="", stato="chiuso", contenuto=None, posizione=None, token="O"):
@@ -28,6 +29,7 @@ class OggettoInterattivo:
         self.difficolta_abilita = {}  # Difficoltà per ogni abilità
         self.messaggi_interazione = {}  # Feedback narrativi per interazioni
         self.eventi = {}  # Eventi da attivare al cambiamento di stato
+        self.tipo = "oggetto_interattivo"  # Tipo dell'oggetto, utile per la serializzazione
     
     def __getstate__(self):
         """
@@ -187,12 +189,12 @@ class OggettoInterattivo:
         Returns:
             dict: Rappresentazione dell'oggetto in formato dizionario
         """
-        # Serializza solo gli attributi fondamentali
-        return {
+        # Serializza gli attributi fondamentali
+        result = {
             "nome": self.nome,
+            "tipo": self.tipo,
             "descrizione": self.descrizione,
             "stato": self.stato,
-            "contenuto": [obj.to_dict() if hasattr(obj, 'to_dict') else obj.nome for obj in self.contenuto],
             "posizione": self.posizione,
             "token": self.token,
             "descrizioni_stati": self.descrizioni_stati,
@@ -200,8 +202,13 @@ class OggettoInterattivo:
             "abilita_richieste": self.abilita_richieste,
             "difficolta_abilita": self.difficolta_abilita,
             "messaggi_interazione": self.messaggi_interazione,
-            # Gli eventi non sono serializzabili direttamente
         }
+        
+        # Aggiungi il contenuto se presente
+        if self.contenuto:
+            result["contenuto"] = [obj.to_dict() if hasattr(obj, 'to_dict') else {"nome": obj.nome} for obj in self.contenuto]
+        
+        return result
     
     @classmethod
     def from_dict(cls, data):
@@ -223,6 +230,9 @@ class OggettoInterattivo:
             posizione=data.get("posizione"),
             token=data.get("token", "O")
         )
+        
+        # Imposta il tipo
+        oggetto.tipo = data.get("tipo", "oggetto_interattivo")
         
         # Impostazione del contenuto
         contenuto_raw = data.get("contenuto", [])
@@ -246,11 +256,73 @@ class OggettoInterattivo:
         
         return oggetto
 
+    @classmethod
+    def carica_da_json(cls, nome_oggetto):
+        """
+        Carica un oggetto interattivo dal file JSON.
+        
+        Args:
+            nome_oggetto (str): Nome dell'oggetto da caricare.
+            
+        Returns:
+            OggettoInterattivo: Istanza dell'oggetto interattivo caricato.
+        """
+        data_manager = get_data_manager()
+        dati_oggetto = data_manager.get_interactive_objects(nome_oggetto)
+        
+        if not dati_oggetto:
+            return None
+            
+        # Determina il tipo di classe da istanziare
+        tipo_oggetto = dati_oggetto.get("tipo", "oggetto_interattivo")
+        
+        if tipo_oggetto == "baule":
+            return Baule.from_dict(dati_oggetto)
+        elif tipo_oggetto == "porta":
+            return Porta.from_dict(dati_oggetto)
+        elif tipo_oggetto == "leva":
+            return Leva.from_dict(dati_oggetto)
+        elif tipo_oggetto == "trappola":
+            return Trappola.from_dict(dati_oggetto)
+        elif tipo_oggetto == "oggetto_rompibile":
+            return OggettoRompibile.from_dict(dati_oggetto)
+        else:
+            return OggettoInterattivo.from_dict(dati_oggetto)
+
+    def salva_su_json(self):
+        """
+        Salva l'oggetto interattivo su file JSON.
+        
+        Returns:
+            bool: True se il salvataggio è avvenuto con successo, False altrimenti.
+        """
+        data_manager = get_data_manager()
+        oggetti = data_manager.get_interactive_objects()
+        
+        # Converti l'oggetto in dizionario
+        oggetto_dict = self.to_dict()
+        
+        # Cerca se l'oggetto esiste già e aggiornalo
+        oggetto_esistente = False
+        for i, oggetto in enumerate(oggetti):
+            if oggetto.get("nome") == self.nome:
+                oggetti[i] = oggetto_dict
+                oggetto_esistente = True
+                break
+                
+        # Se l'oggetto non esiste, aggiungilo
+        if not oggetto_esistente:
+            oggetti.append(oggetto_dict)
+            
+        # Salva gli oggetti aggiornati
+        return data_manager.save_interactive_objects(oggetti)
+
 
 class Baule(OggettoInterattivo):
     def __init__(self, nome, descrizione="", stato="chiuso", contenuto=None, richiede_chiave=False, posizione=None, token="C"):
         super().__init__(nome, descrizione, stato, contenuto, posizione, token)
         self.richiede_chiave = richiede_chiave
+        self.tipo = "baule"
     
     def interagisci(self, giocatore, gioco=None):
         if self.stato == "chiuso":
@@ -291,12 +363,26 @@ class Baule(OggettoInterattivo):
             if gioco:
                 gioco.io.mostra_messaggio(f"Il {self.nome} è già aperto.")
 
+    def to_dict(self):
+        """Estende il metodo to_dict della classe base per aggiungere attributi specifici."""
+        data = super().to_dict()
+        data["richiede_chiave"] = self.richiede_chiave
+        return data
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Crea un'istanza di Baule da un dizionario."""
+        baule = super(Baule, cls).from_dict(data)
+        baule.richiede_chiave = data.get("richiede_chiave", False)
+        return baule
+
 
 class Porta(OggettoInterattivo):
     def __init__(self, nome, descrizione="", stato="chiusa", richiede_chiave=False, posizione=None, posizione_destinazione=None, token="D"):
         super().__init__(nome, descrizione, stato, None, posizione, token)
         self.richiede_chiave = richiede_chiave
         self.posizione_destinazione = posizione_destinazione  # Dove porta questa porta
+        self.tipo = "porta"
     
     def interagisci(self, giocatore, gioco=None):
         if self.stato == "chiusa":
@@ -333,10 +419,26 @@ class Porta(OggettoInterattivo):
             if gioco:
                 gioco.io.mostra_messaggio(f"La {self.nome} è {self.stato}.")
 
+    def to_dict(self):
+        """Estende il metodo to_dict della classe base per aggiungere attributi specifici."""
+        data = super().to_dict()
+        data["richiede_chiave"] = self.richiede_chiave
+        data["posizione_destinazione"] = self.posizione_destinazione
+        return data
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Crea un'istanza di Porta da un dizionario."""
+        porta = super(Porta, cls).from_dict(data)
+        porta.richiede_chiave = data.get("richiede_chiave", False)
+        porta.posizione_destinazione = data.get("posizione_destinazione")
+        return porta
+
 
 class Leva(OggettoInterattivo):
     def __init__(self, nome, descrizione="", stato="disattivata", posizione=None, token="L"):
         super().__init__(nome, descrizione, stato, None, posizione, token)
+        self.tipo = "leva"
     
     def interagisci(self, giocatore, gioco=None):
         if self.stato == "disattivata":
@@ -376,6 +478,7 @@ class Trappola(OggettoInterattivo):
         super().__init__(nome, descrizione, stato, None, posizione, token)
         self.danno = danno
         self.difficolta_salvezza = difficolta_salvezza
+        self.tipo = "trappola"
     
     def interagisci(self, giocatore, gioco=None):
         if self.stato == "attiva":
@@ -407,12 +510,28 @@ class Trappola(OggettoInterattivo):
             if gioco:
                 gioco.io.mostra_messaggio(f"La {self.nome} è già disattivata.")
 
+    def to_dict(self):
+        """Estende il metodo to_dict della classe base per aggiungere attributi specifici."""
+        data = super().to_dict()
+        data["danno"] = self.danno
+        data["difficolta_salvezza"] = self.difficolta_salvezza
+        return data
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Crea un'istanza di Trappola da un dizionario."""
+        trappola = super(Trappola, cls).from_dict(data)
+        trappola.danno = data.get("danno", 10)
+        trappola.difficolta_salvezza = data.get("difficolta_salvezza", 10)
+        return trappola
+
 
 class OggettoRompibile(OggettoInterattivo):
-    def __init__(self, nome, descrizione="", stato="integro", materiali=None, forza_richiesta=5, posizione=None):
-        super().__init__(nome, descrizione, stato, None, posizione)
+    def __init__(self, nome, descrizione="", stato="integro", materiali=None, forza_richiesta=5, posizione=None, token="O"):
+        super().__init__(nome, descrizione, stato, None, posizione, token)
         self.materiali = materiali or []  # Lista di oggetti che si ottengono rompendo
         self.forza_richiesta = forza_richiesta
+        self.tipo = "oggetto_rompibile"
     
     def interagisci(self, giocatore, gioco=None):
         if self.stato == "integro":
@@ -432,3 +551,31 @@ class OggettoRompibile(OggettoInterattivo):
         else:
             if gioco:
                 gioco.io.mostra_messaggio(f"{self.nome} è già rotto.")
+
+    def to_dict(self):
+        """Estende il metodo to_dict della classe base per aggiungere attributi specifici."""
+        data = super().to_dict()
+        data["forza_richiesta"] = self.forza_richiesta
+        data["materiali"] = [obj.to_dict() if hasattr(obj, 'to_dict') else {"nome": obj.nome} for obj in self.materiali]
+        return data
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Crea un'istanza di OggettoRompibile da un dizionario."""
+        from items.oggetto import Oggetto
+        
+        oggetto = super(OggettoRompibile, cls).from_dict(data)
+        oggetto.forza_richiesta = data.get("forza_richiesta", 5)
+        
+        # Carica i materiali
+        materiali_raw = data.get("materiali", [])
+        materiali = []
+        
+        for item in materiali_raw:
+            if isinstance(item, dict):
+                materiali.append(Oggetto.from_dict(item))
+            elif isinstance(item, str):
+                materiali.append(Oggetto(item, "comune"))
+        
+        oggetto.materiali = materiali
+        return oggetto

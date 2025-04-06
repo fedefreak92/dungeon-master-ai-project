@@ -451,7 +451,7 @@ class ProvaAbilitaState(BaseState):
                 
         # Piccola ricompensa per il successo
         exp = 5
-        if gioco.giocatore.guadagna_esperienza(exp):
+        if gioco.giocatore.guadagna_esperienza(exp, gioco):
             gioco.io.mostra_messaggio(f"Hai guadagnato {exp} punti esperienza e sei salito di livello!")
         else:
             gioco.io.mostra_messaggio(f"Hai guadagnato {exp} punti esperienza.")
@@ -503,21 +503,87 @@ class ProvaAbilitaState(BaseState):
         
         # Ricompensa base
         exp = 8
-        if gioco.giocatore.guadagna_esperienza(exp):
+        if gioco.giocatore.guadagna_esperienza(exp, gioco):
             gioco.io.mostra_messaggio(f"Hai guadagnato {exp} punti esperienza e sei salito di livello!")
         else:
             gioco.io.mostra_messaggio(f"Hai guadagnato {exp} punti esperienza.")
     
     def _gestisci_fallimento_npg(self, gioco, abilita, npg):
-        """Gestisce gli effetti del fallimento nella prova contro un NPG"""
-        gioco.io.mostra_messaggio(f"L'interazione con {npg.nome} non è andata bene.")
-        
-        # Comportamento diverso in base all'abilità
+        """Gestisce il fallimento di una prova contro un NPG"""
+        # Determina gli effetti del fallimento in base all'abilità
         if abilita == "forza":
-            gioco.io.mostra_messaggio(f"{npg.nome} non sembra impressionato dalla tua forza.")
+            gioco.io.mostra_messaggio(f"{npg.nome} si è dimostrato più forte e ti ha atterrato!")
+            gioco.giocatore.subisci_danno(1)
         elif abilita == "destrezza":
-            gioco.io.mostra_messaggio(f"{npg.nome} ha notato la tua goffaggine.")
+            gioco.io.mostra_messaggio(f"{npg.nome} è troppo veloce per te!")
+        elif abilita == "costituzione":
+            gioco.io.mostra_messaggio(f"La tua resistenza non regge al confronto con {npg.nome}.")
+            gioco.giocatore.subisci_danno(1)
+        elif abilita == "intelligenza":
+            gioco.io.mostra_messaggio(f"{npg.nome} ti ha battuto in astuzia!")
+        elif abilita == "saggezza":
+            gioco.io.mostra_messaggio(f"{npg.nome} è più perspicace di te.")
         elif abilita == "carisma":
-            gioco.io.mostra_messaggio(f"{npg.nome} sembra infastidito dal tuo approccio.")
-            if hasattr(npg, "stato_corrente"):
-                npg.cambia_stato("diffidente")
+            gioco.io.mostra_messaggio(f"{npg.nome} ti ignora completamente dopo il tuo tentativo fallito.")
+        else:  # Fallimento di un'abilità specifica
+            gioco.io.mostra_messaggio(f"Il tuo tentativo di {abilita} contro {npg.nome} fallisce miseramente!")
+
+    def to_dict(self):
+        """
+        Converte lo stato in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dello stato in formato dizionario
+        """
+        # Ottieni il dizionario base
+        data = super().to_dict()
+        
+        # Aggiungi attributi specifici
+        data.update({
+            "fase": self.fase,
+            "ultimo_input": self.ultimo_input,
+            "abilita_scelta": self.abilita_scelta
+        })
+        
+        # Gestione di contesto e dati_contestuali
+        # Filtra solo i dati serializzabili
+        contesto_serializzabile = {}
+        for k, v in self.contesto.items():
+            if isinstance(v, (str, int, float, bool, list, dict, tuple, type(None))):
+                contesto_serializzabile[k] = v
+            elif hasattr(v, 'to_dict') and callable(getattr(v, 'to_dict')):
+                contesto_serializzabile[k] = v.to_dict()
+        
+        dati_contestuali_serializzabili = {}
+        for k, v in self.dati_contestuali.items():
+            if isinstance(v, (str, int, float, bool, list, dict, tuple, type(None))):
+                dati_contestuali_serializzabili[k] = v
+            elif hasattr(v, 'to_dict') and callable(getattr(v, 'to_dict')):
+                dati_contestuali_serializzabili[k] = v.to_dict()
+                
+        data["contesto"] = contesto_serializzabile
+        data["dati_contestuali"] = dati_contestuali_serializzabili
+        
+        return data
+
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di ProvaAbilitaState da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati dello stato
+            
+        Returns:
+            ProvaAbilitaState: Nuova istanza dello stato
+        """
+        contesto = data.get("contesto", {})
+        state = cls(contesto)
+        
+        # Ripristina attributi
+        state.fase = data.get("fase", "scegli_abilita")
+        state.ultimo_input = data.get("ultimo_input")
+        state.abilita_scelta = data.get("abilita_scelta")
+        state.dati_contestuali = data.get("dati_contestuali", {})
+        
+        return state

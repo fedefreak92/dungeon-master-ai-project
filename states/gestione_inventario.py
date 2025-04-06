@@ -115,7 +115,7 @@ class GestioneInventarioState(BaseState):
                 if isinstance(oggetto, str):
                     gioco.io.mostra_messaggio(f"Non puoi usare {oggetto} direttamente.")
                 else:
-                    oggetto.usa(gioco.giocatore)
+                    oggetto.usa(gioco.giocatore, gioco)
                     gioco.io.mostra_messaggio(f"Hai usato: {oggetto.nome}")
             elif scelta == len(gioco.giocatore.inventario) + 1:
                 self.fase = "menu_principale"
@@ -247,6 +247,53 @@ class GestioneInventarioState(BaseState):
     def _attendi_conferma(self, gioco):
         gioco.io.richiedi_input("Premi INVIO per continuare...")
         self.fase = "menu_principale"
+
+    def to_dict(self):
+        """
+        Converte lo stato in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione dello stato in formato dizionario
+        """
+        # Ottieni il dizionario base
+        data = super().to_dict()
+        
+        # Aggiungi attributi specifici
+        data.update({
+            "fase": self.fase,
+            "ultimo_input": self.ultimo_input
+        })
+        
+        # Se stato_precedente è un oggetto stato con to_dict() lo serializziamo
+        if self.stato_precedente and hasattr(self.stato_precedente, 'to_dict'):
+            data["stato_precedente"] = self.stato_precedente.to_dict()
+        elif self.stato_precedente and hasattr(self.stato_precedente, '__class__'):
+            # Altrimenti salviamo solo il tipo
+            data["stato_precedente_tipo"] = self.stato_precedente.__class__.__name__
+            
+        return data
+
+    @classmethod
+    def from_dict(cls, data):
+        """
+        Crea un'istanza di GestioneInventarioState da un dizionario.
+        
+        Args:
+            data (dict): Dizionario con i dati dello stato
+            
+        Returns:
+            GestioneInventarioState: Nuova istanza dello stato
+        """
+        state = cls()
+        
+        # Ripristina attributi
+        state.fase = data.get("fase", "menu_principale")
+        state.ultimo_input = data.get("ultimo_input")
+        
+        # Nota: stato_precedente verrà gestito dal chiamante
+        # perché potrebbe richiedere riferimenti all'intero stack di stati
+        
+        return state
 
 # I vecchi metodi non sono più necessari perché ora abbiamo versioni separate per ogni fase
 # def _usa_oggetto(self, gioco): ...

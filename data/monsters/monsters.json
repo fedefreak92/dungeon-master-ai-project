@@ -1,0 +1,154 @@
+{
+  "goblin": {
+    "nome": "Goblin",
+    "descrizione": "Un piccolo umanoide verde con orecchie a punta e denti affilati",
+    "statistiche": {
+      "hp": 10,
+      "forza": 8,
+      "destrezza": 14,
+      "costituzione": 10,
+      "intelligenza": 6,
+      "saggezza": 8,
+      "carisma": 6
+    },
+    "armi": ["Spada corta", "Arco corto"],
+    "armatura": "Armatura di cuoio",
+    "oro": 15,
+    "esperienza": 50,
+    "token": "G",
+    "difficolta": "facile"
+  },
+  "orco": {
+    "nome": "Orco",
+    "descrizione": "Un grosso umanoide brutale con zanne sporgenti e pelle verde-grigiastra",
+    "statistiche": {
+      "hp": 25,
+      "forza": 16,
+      "destrezza": 10,
+      "costituzione": 14,
+      "intelligenza": 7,
+      "saggezza": 10,
+      "carisma": 8
+    },
+    "armi": ["Ascia da battaglia", "Giavellotto"],
+    "armatura": "Armatura a scaglie",
+    "oro": 30,
+    "esperienza": 100,
+    "token": "O",
+    "difficolta": "medio"
+  },
+  "lupo": {
+    "nome": "Lupo Feroce",
+    "descrizione": "Un grande lupo selvatico dagli occhi gialli e il pelo scuro",
+    "statistiche": {
+      "hp": 15,
+      "forza": 12,
+      "destrezza": 15,
+      "costituzione": 12,
+      "intelligenza": 3,
+      "saggezza": 12,
+      "carisma": 6
+    },
+    "armi": ["Morso", "Artigli"],
+    "armatura": "Pelliccia spessa",
+    "oro": 5,
+    "esperienza": 75,
+    "token": "L",
+    "difficolta": "facile"
+  },
+  "scheletro": {
+    "nome": "Scheletro",
+    "descrizione": "Un guerriero non-morto composto da ossa animate da magia oscura",
+    "statistiche": {
+      "hp": 18,
+      "forza": 10,
+      "destrezza": 14,
+      "costituzione": 12,
+      "intelligenza": 6,
+      "saggezza": 8,
+      "carisma": 5
+    },
+    "armi": ["Spada lunga", "Arco lungo"],
+    "armatura": "Resti di armatura",
+    "oro": 20,
+    "esperienza": 90,
+    "token": "S",
+    "difficolta": "medio"
+  },
+  "troll": {
+    "nome": "Troll",
+    "descrizione": "Un gigantesco umanoide con pelle verde rugosa e capacità rigenerative",
+    "statistiche": {
+      "hp": 40,
+      "forza": 18,
+      "destrezza": 12,
+      "costituzione": 20,
+      "intelligenza": 7,
+      "saggezza": 8,
+      "carisma": 7
+    },
+    "armi": ["Artigli", "Morso"],
+    "armatura": "Pelle coriacea",
+    "oro": 50,
+    "esperienza": 200,
+    "token": "T",
+    "difficolta": "difficile"
+  },
+  "drago_giovane": {
+    "nome": "Giovane Drago",
+    "descrizione": "Un drago di media taglia con scaglie rosse lucenti e occhi minacciosi",
+    "statistiche": {
+      "hp": 75,
+      "forza": 19,
+      "destrezza": 14,
+      "costituzione": 17,
+      "intelligenza": 14,
+      "saggezza": 12,
+      "carisma": 16
+    },
+    "armi": ["Soffio di fuoco", "Artigli", "Morso"],
+    "armatura": "Scaglie spesse",
+    "oro": 200,
+    "esperienza": 500,
+    "token": "D",
+    "difficolta": "difficile"
+  },
+  "ragno_gigante": {
+    "nome": "Ragno Gigante",
+    "descrizione": "Un enorme aracnide con zampe pelose e zanne velenose",
+    "statistiche": {
+      "hp": 22,
+      "forza": 14,
+      "destrezza": 16,
+      "costituzione": 12,
+      "intelligenza": 2,
+      "saggezza": 10,
+      "carisma": 4
+    },
+    "armi": ["Morso velenoso", "Tela appiccicosa"],
+    "armatura": "Esoscheletro",
+    "oro": 25,
+    "esperienza": 120,
+    "token": "R",
+    "difficolta": "medio"
+  },
+  "zombie": {
+    "nome": "Zombie",
+    "descrizione": "Un cadavere rianimato che avanza lentamente con sguardo vuoto",
+    "statistiche": {
+      "hp": 30,
+      "forza": 13,
+      "destrezza": 6,
+      "costituzione": 16,
+      "intelligenza": 3,
+      "saggezza": 6,
+      "carisma": 5
+    },
+    "armi": ["Pugno", "Morso infetto"],
+    "armatura": "Vestiti logori",
+    "oro": 10,
+    "esperienza": 80,
+    "token": "Z",
+    "difficolta": "medio"
+  }
+} 

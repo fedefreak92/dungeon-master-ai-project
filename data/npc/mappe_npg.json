@@ -1,0 +1,40 @@
+{
+  "taverna": [
+    {
+      "nome": "Durnan",
+      "posizione": [6, 6]
+    },
+    {
+      "nome": "Elminster",
+      "posizione": [12, 12]
+    },
+    {
+      "nome": "Mirt",
+      "posizione": [7, 7]
+    }
+  ],
+  "mercato": [
+    {
+      "nome": "Araldo",
+      "posizione": [2, 3]
+    },
+    {
+      "nome": "Violetta",
+      "posizione": [12, 3]
+    },
+    {
+      "nome": "Gundren",
+      "posizione": [5, 8]
+    }
+  ],
+  "cantina": [
+    {
+      "nome": "Spettro",
+      "posizione": [5, 5]
+    },
+    {
+      "nome": "Cultista",
+      "posizione": [12, 8]
+    }
+  ]
+} 

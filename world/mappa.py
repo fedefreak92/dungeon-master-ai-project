@@ -3,6 +3,9 @@ from entities.npg import NPG
 from entities.entita import Entita   
 from entities.giocatore import Giocatore
 from entities.nemico import Nemico
+import json
+import logging
+from pathlib import Path
 
 class Mappa:
     def __init__(self, nome, larghezza, altezza, tipo="interno"):
@@ -89,8 +92,7 @@ class Mappa:
             riga = ""
             for x in range(self.larghezza):
                 if pos_giocatore and pos_giocatore == (x, y):
-                    if pos_giocatore[0] == x and pos_giocatore[1] == y:
-                        riga += "P"  # Giocatore, usiamo sempre P per coerenza visiva
+                    riga += "P"  # Giocatore, usiamo sempre P per coerenza visiva
                 elif (x, y) in self.npg:
                     riga += self.npg[(x, y)].token  # Usa il token dell'NPG
                 elif (x, y) in self.oggetti:
@@ -270,3 +272,102 @@ class Mappa:
             mappa.pos_iniziale_giocatore = tuple(data["pos_iniziale_giocatore"])
         
         return mappa
+
+class MappaComponente:
+    """
+    Classe base per componenti di una mappa che possono essere serializzati e deserializzati.
+    Usata per estendere le funzionalità della mappa con componenti modulari.
+    """
+    def __init__(self, nome, descrizione=""):
+        self.nome = nome
+        self.descrizione = descrizione
+        
+    def to_dict(self):
+        """Converte il componente in un dizionario per la serializzazione"""
+        return {
+            "nome": self.nome,
+            "descrizione": self.descrizione,
+            "tipo": self.__class__.__name__
+        }
+    
+    @classmethod
+    def from_dict(cls, data):
+        """Crea un'istanza del componente da un dizionario"""
+        return cls(
+            nome=data.get("nome", "componente_sconosciuto"),
+            descrizione=data.get("descrizione", "")
+        )
+        
+class MappaCaricatore:
+    """
+    Classe responsabile del caricamento e salvataggio di mappe da e verso file.
+    """
+    def __init__(self, percorso_base=None):
+        """
+        Inizializza il caricatore di mappe.
+        
+        Args:
+            percorso_base: Percorso base dove cercare i file delle mappe
+        """
+        self.percorso_base = percorso_base or Path("data/mappe")
+        
+    def carica_mappa(self, nome_file):
+        """
+        Carica una mappa da un file JSON.
+        
+        Args:
+            nome_file: Nome del file JSON (senza percorso)
+            
+        Returns:
+            Mappa: L'oggetto mappa caricato
+        """
+        percorso_completo = self.percorso_base / nome_file
+        
+        if not percorso_completo.exists():
+            raise FileNotFoundError(f"File mappa non trovato: {percorso_completo}")
+            
+        try:
+            with open(percorso_completo, 'r', encoding='utf-8') as f:
+                dati_mappa = json.load(f)
+                
+            return Mappa.from_dict(dati_mappa)
+        except Exception as e:
+            logging.error(f"Errore nel caricamento della mappa {nome_file}: {e}")
+            raise
+            
+    def salva_mappa(self, mappa, nome_file=None):
+        """
+        Salva una mappa su un file JSON.
+        
+        Args:
+            mappa: Oggetto mappa da salvare
+            nome_file: Nome del file (se None, usa il nome della mappa)
+            
+        Returns:
+            bool: True se il salvataggio è riuscito
+        """
+        nome_file = nome_file or f"{mappa.nome}.json"
+        percorso_completo = self.percorso_base / nome_file
+        
+        # Assicurati che la directory esista
+        percorso_completo.parent.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            with open(percorso_completo, 'w', encoding='utf-8') as f:
+                json.dump(mappa.to_dict(), f, indent=2, ensure_ascii=False)
+            return True
+        except Exception as e:
+            logging.error(f"Errore nel salvataggio della mappa {nome_file}: {e}")
+            return False
+            
+    def elenca_mappe_disponibili(self):
+        """
+        Elenca tutte le mappe disponibili nella directory.
+        
+        Returns:
+            list: Lista di nomi di file delle mappe disponibili
+        """
+        if not self.percorso_base.exists():
+            return []
+            
+        return [f.name for f in self.percorso_base.glob("*.json")]

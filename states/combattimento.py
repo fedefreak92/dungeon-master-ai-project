@@ -155,7 +155,7 @@ class CombattimentoState(BaseState):
                 
                 # Usa il metodo usa dell'oggetto
                 if hasattr(item, 'usa'):
-                    item.usa(giocatore)
+                    item.usa(giocatore, gioco)
                 else:
                     # Retrocompatibilità con stringhe
                     self._applica_effetto_oggetto(giocatore, item, gioco)
@@ -321,7 +321,7 @@ class CombattimentoState(BaseState):
         gioco.io.mostra_messaggio(f"Turno: {self.turno}")
         gioco.io.mostra_messaggio(f"HP {giocatore.nome}: {giocatore.hp}/{giocatore.hp_max} | HP {self.avversario.nome}: {self.avversario.hp}/{self.avversario.hp_max}")
         
-        # Mostra anche l'equipaggiamento attuale
+        # Mostra anche l'equipaggiamento attuale del giocatore
         arma = giocatore.arma if isinstance(giocatore.arma, str) else (giocatore.arma.nome if giocatore.arma else "Nessuna")
         armatura = giocatore.armatura if isinstance(giocatore.armatura, str) else (giocatore.armatura.nome if giocatore.armatura else "Nessuna")
         
@@ -334,8 +334,24 @@ class CombattimentoState(BaseState):
                 accessori_nomi.append(acc.nome)
         accessori = ", ".join(accessori_nomi) if accessori_nomi else "Nessuno"
         
-        gioco.io.mostra_messaggio(f"Arma: {arma} | Armatura: {armatura} | Accessori: {accessori}")
-        gioco.io.mostra_messaggio(f"Forza: {giocatore.forza} | Difesa: {giocatore.difesa}")
+        # Mostra equipaggiamento del giocatore
+        gioco.io.mostra_messaggio(f"{giocatore.nome} - Arma: {arma} | Armatura: {armatura} | Accessori: {accessori}")
+        gioco.io.mostra_messaggio(f"{giocatore.nome} - Forza: {giocatore.forza} | Difesa: {giocatore.difesa}")
+        
+        # Mostra informazioni sul nemico se disponibili
+        if hasattr(self.avversario, 'armi') and self.avversario.armi:
+            gioco.io.mostra_messaggio(f"{self.avversario.nome} - Armi: {', '.join(self.avversario.armi)}")
+        
+        if hasattr(self.avversario, 'armatura') and self.avversario.armatura:
+            gioco.io.mostra_messaggio(f"{self.avversario.nome} - Armatura: {self.avversario.armatura}")
+            
+        if hasattr(self.avversario, 'forza'):
+            gioco.io.mostra_messaggio(f"{self.avversario.nome} - Forza: {self.avversario.forza}")
+            
+        if hasattr(self.avversario, 'descrizione') and self.turno == 1:
+            # Mostra la descrizione solo al primo turno
+            gioco.io.mostra_messaggio(f"\n{self.avversario.descrizione}")
+            
         gioco.io.mostra_messaggio("="*60)
         
     def _controlla_fine_combattimento(self, gioco):
@@ -365,9 +381,14 @@ class CombattimentoState(BaseState):
                 giocatore.aggiungi_item(item)
                 gioco.io.mostra_messaggio(f"Hai ottenuto: {item.nome}")
             
-            # Guadagna esperienza
-            exp_guadagnata = 25 * (1 + self.avversario.livello if hasattr(self.avversario, 'livello') else 1)
-            if giocatore.guadagna_esperienza(exp_guadagnata):
+            # Guadagna esperienza - Corretto per utilizzare valore_esperienza
+            if hasattr(self.avversario, 'valore_esperienza'):
+                exp_guadagnata = self.avversario.valore_esperienza * (1 + getattr(self.avversario, 'livello', 0))
+            else:
+                # Valore predefinito se il nemico non ha l'attributo valore_esperienza
+                exp_guadagnata = 25 * (1 + getattr(self.avversario, 'livello', 0))
+                
+            if giocatore.guadagna_esperienza(exp_guadagnata, gioco):
                 gioco.io.mostra_messaggio(f"Hai guadagnato {exp_guadagnata} punti esperienza e sei salito di livello!")
             else:
                 gioco.io.mostra_messaggio(f"Hai guadagnato {exp_guadagnata} punti esperienza!")
@@ -390,13 +411,21 @@ class CombattimentoState(BaseState):
             critico = True
         
         # Applica il danno all'avversario
-        self.avversario.ferisci(danno)
+        self.avversario.ferisci(danno, gioco)
         
-        if critico:
-            gioco.io.mostra_messaggio(f"\nCOLPO CRITICO! Attacchi {self.avversario.nome} e infliggi {danno} danni!")
+        # Messaggio di attacco
+        if hasattr(giocatore, 'arma') and giocatore.arma:
+            arma_nome = giocatore.arma.nome if hasattr(giocatore.arma, 'nome') else str(giocatore.arma)
+            if critico:
+                gioco.io.mostra_messaggio(f"\nCOLPO CRITICO! Attacchi {self.avversario.nome} con {arma_nome} e infliggi {danno} danni!")
+            else:
+                gioco.io.mostra_messaggio(f"\nAttacchi {self.avversario.nome} con {arma_nome} e infliggi {danno} danni!")
         else:
-            gioco.io.mostra_messaggio(f"\nAttacchi {self.avversario.nome} e infliggi {danno} danni!")
-        
+            if critico:
+                gioco.io.mostra_messaggio(f"\nCOLPO CRITICO! Attacchi {self.avversario.nome} e infliggi {danno} danni!")
+            else:
+                gioco.io.mostra_messaggio(f"\nAttacchi {self.avversario.nome} e infliggi {danno} danni!")
+    
     def _attacco_nemico(self, giocatore, gioco):
         """Gestisce l'attacco dell'avversario"""
         # Per NPG usiamo la loro forza, altrimenti usiamo il danno del nemico
@@ -404,12 +433,20 @@ class CombattimentoState(BaseState):
             danno = max(1, self.npg_ostile.forza if hasattr(self.npg_ostile, 'forza') else 3)
         else:
             danno = self.nemico.forza if hasattr(self.nemico, 'forza') else self.nemico.danno
+            
+        # Descrizione dell'attacco
+        if hasattr(self.avversario, 'armi') and self.avversario.armi:
+            import random
+            arma = random.choice(self.avversario.armi)
+            gioco.io.mostra_messaggio(f"\n{self.avversario.nome} ti attacca con {arma}!")
+        else:
+            gioco.io.mostra_messaggio(f"\n{self.avversario.nome} ti attacca!")
         
         # Considera la difesa del giocatore (armatura + valori base)
         danno_effettivo = max(1, danno - giocatore.difesa)
         
-        gioco.io.mostra_messaggio(f"\n{self.avversario.nome} ti attacca e infligge {danno_effettivo} danni!")
-        giocatore.ferisci(danno)
+        gioco.io.mostra_messaggio(f"Subisci {danno_effettivo} danni!")
+        giocatore.ferisci(danno, gioco)
     
     def _applica_effetto_oggetto(self, giocatore, item, gioco):
         """Applica l'effetto di un oggetto"""
@@ -424,13 +461,13 @@ class CombattimentoState(BaseState):
             elif "Veleno" in item:
                 # Avvelena il nemico
                 danno = 5
-                self.avversario.ferisci(danno)
+                self.avversario.ferisci(danno, gioco)
                 gioco.io.mostra_messaggio(f"\nUsi {item} e infliggi {danno} danni a {self.avversario.nome}!")
                 giocatore.inventario.remove(item)
             elif "Bomba" in item:
                 # Danneggia gravemente il nemico
                 danno = 15
-                self.avversario.ferisci(danno)
+                self.avversario.ferisci(danno, gioco)
                 gioco.io.mostra_messaggio(f"\nUsi {item} e infliggi {danno} danni a {self.avversario.nome}!")
                 giocatore.inventario.remove(item)
             else:

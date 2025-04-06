@@ -2,169 +2,110 @@ from states.base_state import BaseState
 from entities.npg import NPG
 
 class DialogoState(BaseState):
-    def __init__(self, npg, stato_iniziale="inizio"):
+    """Stato che gestisce il dialogo con un NPG"""
+    
+    def __init__(self, npg=None, stato_ritorno=None):
         """
-        Inizializza uno stato di dialogo con un NPG.
+        Costruttore dello stato di dialogo
         
         Args:
-            npg (NPG): Il personaggio non giocante con cui dialogare
-            stato_iniziale (str): Lo stato iniziale della conversazione
+            npg (NPG, optional): L'NPG con cui dialogare
+            stato_ritorno (str, optional): Nome dello stato in cui tornare dopo il dialogo
         """
+        self.fase = "conversazione"
+        self.ultimo_input = None
         self.npg = npg
-        self.stato_corrente = stato_iniziale
-        self.conversazione = npg.ottieni_conversazione(stato_iniziale)
-        self.in_dialogo = True
-        self.scelte_fatte = {}  # Memorizza le scelte fatte dall'utente
-        self.fase = "mostra_testo"  # Fasi: mostra_testo, attendi_input, elabora_input, conclusione
-        self.ultima_input = None  # Memorizza l'ultimo input dell'utente
+        self.stato_corrente = "inizio"
+        self.stato_ritorno = stato_ritorno
+        self.dati_contestuali = {}  # Per memorizzare dati tra più fasi
         
     def esegui(self, gioco):
-        """Esegue il dialogo, gestendo una fase alla volta"""
-        if not self.in_dialogo or self.conversazione is None:
-            if gioco.stato_corrente():
-                gioco.pop_stato()
-            return
-        
-        # Gestione basata sulla fase corrente
-        if self.fase == "mostra_testo":
-            self._mostra_testo_dialogo(gioco)
-            self.fase = "applica_effetto" if 'effetto' in self.conversazione else "mostra_opzioni"
-            
-        elif self.fase == "applica_effetto":
-            self._applica_effetto(gioco, self.conversazione['effetto'])
-            self.fase = "mostra_opzioni"
-            
-        elif self.fase == "mostra_opzioni":
-            opzioni = self.conversazione.get('opzioni', [])
-            if not opzioni:
-                # Se non ci sono opzioni, prepara per la conclusione
-                self.fase = "conclusione"
-                return
-                
-            # Mostra opzioni disponibili
-            gioco.io.mostra_messaggio("\nOpzioni disponibili:")
-            for i, (testo, _) in enumerate(opzioni, 1):
-                gioco.io.mostra_messaggio(f"{i}. {testo}")
-                
-            # Prepara per l'input nella prossima chiamata
-            self.fase = "attendi_input"
-            
-        elif self.fase == "attendi_input":
-            opzioni = self.conversazione.get('opzioni', [])
-            if not opzioni:
-                self.fase = "conclusione"
-                return
-                
-            # Richiede input dall'utente
-            self.ultima_input = gioco.io.richiedi_input("\nScegli un'opzione (1-{}): ".format(len(opzioni)))
-            # Passa alla fase di elaborazione
-            self.fase = "elabora_input"
-            
-        elif self.fase == "elabora_input":
-            opzioni = self.conversazione.get('opzioni', [])
-            if self._elabora_scelta(gioco, opzioni):
-                # La fase viene aggiornata all'interno di _elabora_scelta
-                pass
-            else:
-                # Se c'è stato un errore, torna ad attendere input
-                self.fase = "attendi_input"
-                
-        elif self.fase == "conclusione":
-            if not self.conversazione.get('opzioni', []):
-                # Non ci sono opzioni, è un semplice messaggio, attendiamo un Enter per continuare
-                self.ultima_input = gioco.io.richiedi_input("\nPremi Enter per continuare...")
-            
-            # Termina il dialogo
-            self.in_dialogo = False
-            if gioco.stato_corrente():
-                gioco.pop_stato()
-                
-    def _mostra_testo_dialogo(self, gioco):
-        """Mostra il testo del dialogo corrente"""
-        gioco.io.mostra_messaggio("\n" + "="*50)
-        gioco.io.mostra_messaggio(f"{self.npg.nome}: {self.conversazione['testo']}")
-        gioco.io.mostra_messaggio("="*50)
-            
-    def _elabora_scelta(self, gioco, opzioni):
         """
-        Elabora la scelta dell'utente
-        
-        Returns:
-            bool: True se la scelta è valida, False altrimenti
-        """
-        scelta_input = self.ultima_input
-        
-        try:
-            # Prova a convertire in intero
-            if scelta_input.isdigit():
-                scelta = int(scelta_input)
-            else:
-                # Se l'input non è numerico, cerca di abbinarlo a un'opzione
-                scelta = self._trova_opzione_da_testo(scelta_input, opzioni)
-                
-            if scelta is not None and 1 <= scelta <= len(opzioni):
-                testo_scelta, prossimo_stato = opzioni[scelta-1]
-                
-                # Salva la scelta fatta
-                self.scelte_fatte[self.stato_corrente] = scelta
-                
-                if prossimo_stato is None:
-                    # Fine dialogo
-                    self.fase = "conclusione"
-                else:
-                    self.conversazione = self.npg.ottieni_conversazione(prossimo_stato)
-                    if self.conversazione is None:
-                        gioco.io.mostra_messaggio(f"Stato di dialogo '{prossimo_stato}' non trovato per {self.npg.nome}")
-                        self.fase = "conclusione"
-                    else:
-                        self.stato_corrente = prossimo_stato
-                        # Ricomincia il ciclo con il nuovo dialogo
-                        self.fase = "mostra_testo"
-                return True
-            else:
-                gioco.io.mostra_messaggio(f"Scelta non valida: '{scelta_input}'.")
-                return False
-        except (ValueError, TypeError):
-            gioco.io.mostra_messaggio(f"Input non valido: '{scelta_input}'. Usa un numero o il testo di un'opzione.")
-            return False
-    
-    def _trova_opzione_da_testo(self, testo_input, opzioni):
-        """
-        Cerca di abbinare l'input testuale a un'opzione di dialogo
+        Esegue la fase di dialogo
         
         Args:
-            testo_input (str): Il testo inserito dall'utente
-            opzioni (list): Lista di opzioni di dialogo
+            gioco (Gioco): Il gioco in cui si sta svolgendo il dialogo
             
         Returns:
-            int or None: L'indice dell'opzione corrispondente + 1, o None se non trovata
+            str: il prossimo stato
         """
-        testo_input = testo_input.lower().strip()
+        # Controlla se c'è un NPG valido
+        if not self.npg:
+            gioco.io.mostra_messaggio("Non c'è nessuno con cui parlare qui.")
+            gioco.io.richiedi_input("\nPremi Invio per continuare...")
+            gioco.pop_stato()  # Esce dallo stato corrente
+            return self.stato_ritorno or "mappa"
         
-        # Cerca una corrispondenza esatta o parziale con un'opzione
-        for i, (testo_opzione, _) in enumerate(opzioni, 1):
-            if testo_input == testo_opzione.lower() or testo_input in testo_opzione.lower():
-                return i
+        # Ottieni l'interfaccia di input/output
+        io = gioco.io
+        
+        # Ottieni i dati della conversazione per lo stato corrente
+        dati_conversazione = self.npg.ottieni_conversazione(self.stato_corrente)
+        
+        # Se i dati non esistono, torna al menu principale
+        if not dati_conversazione:
+            io.mostra_messaggio(f"{self.npg.nome} non ha nulla da dirti.")
+            io.richiedi_input("\nPremi Invio per continuare...")
+            gioco.pop_stato()  # Esce dallo stato corrente
+            return self.stato_ritorno or "mappa"
+        
+        # Gestisce gli effetti legati allo stato della conversazione
+        if "effetto" in dati_conversazione:
+            self._gestisci_effetto(dati_conversazione["effetto"], gioco)
+        
+        # Mostra il testo della conversazione
+        io.mostra_messaggio(f"{self.npg.nome}: {dati_conversazione['testo']}")
+        
+        # Se la conversazione non ha opzioni, torna allo stato di ritorno
+        if not dati_conversazione.get("opzioni"):
+            io.richiedi_input("\nPremi Invio per continuare...")
+            gioco.pop_stato()  # Esce dallo stato corrente
+            return self.stato_ritorno or "mappa"
+        
+        # Mostra le opzioni di dialogo
+        io.mostra_messaggio("\nOpzioni:")
+        
+        for i, (testo, _) in enumerate(dati_conversazione["opzioni"], 1):
+            io.mostra_messaggio(f"{i}. {testo}")
+        
+        # Ottieni la scelta dell'utente
+        scelta_input = io.richiedi_input("\nScegli un'opzione: ")
+        
+        # Converti l'input in un numero
+        try:
+            scelta = int(scelta_input)
+            if scelta < 1 or scelta > len(dati_conversazione["opzioni"]):
+                io.mostra_messaggio("Scelta non valida.")
+                io.richiedi_input("\nPremi Invio per continuare...")
+                return "dialogo"  # Rimani nello stesso stato
                 
-        # Se non trova una corrispondenza diretta, cerca parole chiave
-        for i, (testo_opzione, _) in enumerate(opzioni, 1):
-            # Dividi il testo dell'opzione in parole
-            parole = set(testo_opzione.lower().split())
-            # Se almeno una parola dell'input utente è anche nel testo dell'opzione
-            if any(parola in parole for parola in testo_input.split()):
-                return i
-                
-        return None
+            # Ottieni la destinazione (stato successivo) della scelta
+            _, destinazione = dati_conversazione["opzioni"][scelta - 1]
+            
+            # Se la destinazione è None, torna allo stato di ritorno
+            if destinazione is None:
+                # Aggiungi una pausa per leggere il messaggio
+                io.richiedi_input("\nPremi Invio per continuare...")
+                gioco.pop_stato()  # Esce dallo stato corrente
+                return self.stato_ritorno or "mappa"
+            
+            # Altrimenti, passa allo stato successivo della conversazione
+            self.stato_corrente = destinazione
+            return "dialogo"
+        except ValueError:
+            io.mostra_messaggio("Per favore, inserisci un numero valido.")
+            io.richiedi_input("\nPremi Invio per continuare...")
+            return "dialogo"
     
-    def _applica_effetto(self, gioco, effetto):
+    def _gestisci_effetto(self, effetto, gioco):
         """Applica effetti speciali in base al tipo di effetto"""
         if isinstance(effetto, str):
             # Gestione effetti semplici
             if effetto == "riposo":
-                gioco.giocatore.cura(5)
+                gioco.giocatore.cura(5, gioco)
                 gioco.io.mostra_messaggio("\n*Hai riposato e recuperato 5 HP*")
             elif effetto == "cura_leggera":
-                gioco.giocatore.cura(3)
+                gioco.giocatore.cura(3, gioco)
                 gioco.io.mostra_messaggio("\n*L'unguento di Violetta ti cura per 3 HP*")
         elif isinstance(effetto, dict):
             # Gestione effetti complessi
@@ -172,7 +113,7 @@ class DialogoState(BaseState):
             
             if tipo == "consegna_oro":
                 quantita = effetto.get("quantita", 10)
-                self.npg.trasferisci_oro(gioco.giocatore, quantita)
+                self.npg.trasferisci_oro(gioco.giocatore, quantita, gioco)
                 gioco.io.mostra_messaggio(f"\n*{self.npg.nome} ti ha dato {quantita} monete d'oro*")
                 
             elif tipo == "aggiungi_item":
@@ -229,7 +170,7 @@ class DialogoState(BaseState):
         Quando si esce dal dialogo
         puliamo lo stato
         """
-        self.in_dialogo = False
+        self.fase = "conversazione"
         gioco.io.mostra_messaggio(f"\nConcludi il dialogo con {self.npg.nome}...")
         
     def ha_fatto_scelta(self, stato, scelta=None):
@@ -243,13 +184,13 @@ class DialogoState(BaseState):
         Returns:
             bool: True se la scelta è stata fatta, False altrimenti
         """
-        if stato not in self.scelte_fatte:
+        if stato not in self.dati_contestuali:
             return False
             
         if scelta is None:
             return True
             
-        return self.scelte_fatte[stato] == scelta
+        return self.dati_contestuali[stato] == scelta
 
     def to_dict(self):
         """
@@ -264,8 +205,8 @@ class DialogoState(BaseState):
         # Aggiungi attributi specifici
         data.update({
             "stato_corrente": self.stato_corrente,
-            "stato_precedente": self.stato_precedente,
-            "scelte_fatte": self.scelte_fatte,
+            "stato_ritorno": self.stato_ritorno,
+            "dati_contestuali": self.dati_contestuali,
             "ultimo_input": self.ultimo_input
         })
         
@@ -303,11 +244,10 @@ class DialogoState(BaseState):
             npg = NPG("NPC Sconosciuto")
             
         # Crea lo stato con l'NPG
-        state = cls(npg, stato_iniziale=data.get("stato_corrente", "inizio"))
+        state = cls(npg, stato_ritorno=data.get("stato_ritorno"))
         
         # Ripristina attributi
-        state.stato_precedente = data.get("stato_precedente")
-        state.scelte_fatte = data.get("scelte_fatte", {})
+        state.dati_contestuali = data.get("dati_contestuali", {})
         state.ultimo_input = data.get("ultimo_input")
         
         return state

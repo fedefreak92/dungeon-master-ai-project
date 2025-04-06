@@ -1,0 +1,44 @@
+[
+  {
+    "nome": "Armatura di cuoio",
+    "tipo": "armatura",
+    "effetto": {"difesa": 2},
+    "valore": 20,
+    "descrizione": "Una leggera armatura di cuoio che offre protezione di base"
+  },
+  {
+    "nome": "Cotta di maglia",
+    "tipo": "armatura",
+    "effetto": {"difesa": 4},
+    "valore": 45,
+    "descrizione": "Un'armatura di anelli metallici intrecciati che protegge dai colpi"
+  },
+  {
+    "nome": "Corazza a piastre",
+    "tipo": "armatura",
+    "effetto": {"difesa": 6, "forza": -1},
+    "valore": 80,
+    "descrizione": "Un'armatura pesante di piastre metalliche, offre grande protezione ma riduce la mobilità"
+  },
+  {
+    "nome": "Veste del mago",
+    "tipo": "armatura",
+    "effetto": {"difesa": 1, "intelligenza": 2},
+    "valore": 60,
+    "descrizione": "Una veste incantata che migliora le capacità magiche"
+  },
+  {
+    "nome": "Mantello dell'ombra",
+    "tipo": "armatura",
+    "effetto": {"difesa": 3, "destrezza": 1},
+    "valore": 50,
+    "descrizione": "Un mantello scuro che aiuta a nascondersi nelle ombre"
+  },
+  {
+    "nome": "Armatura di scaglie",
+    "tipo": "armatura",
+    "effetto": {"difesa": 5},
+    "valore": 70,
+    "descrizione": "Un'armatura fatta di piccole scaglie metalliche sovrapposte"
+  }
+] 

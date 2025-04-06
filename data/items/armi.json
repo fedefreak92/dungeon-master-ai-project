@@ -1,0 +1,44 @@
+[
+  {
+    "nome": "Spada corta",
+    "tipo": "arma",
+    "effetto": {"forza": 3},
+    "valore": 25,
+    "descrizione": "Una piccola spada adatta a combattimenti ravvicinati"
+  },
+  {
+    "nome": "Spada lunga",
+    "tipo": "arma",
+    "effetto": {"forza": 5},
+    "valore": 50,
+    "descrizione": "Una spada a una mano con lama affilata"
+  },
+  {
+    "nome": "Ascia da battaglia",
+    "tipo": "arma",
+    "effetto": {"forza": 7},
+    "valore": 75,
+    "descrizione": "Un'ascia pesante capace di infliggere danni considerevoli"
+  },
+  {
+    "nome": "Arco corto",
+    "tipo": "arma",
+    "effetto": {"forza": 4, "destrezza": 1},
+    "valore": 30,
+    "descrizione": "Un arco leggero e facile da usare"
+  },
+  {
+    "nome": "Pugnale",
+    "tipo": "arma",
+    "effetto": {"forza": 2, "destrezza": 2},
+    "valore": 15,
+    "descrizione": "Un'arma piccola ma letale se usata con precisione"
+  },
+  {
+    "nome": "Bastone del mago",
+    "tipo": "arma",
+    "effetto": {"forza": 2, "intelligenza": 3},
+    "valore": 100,
+    "descrizione": "Un bastone che amplifica i poteri magici"
+  }
+] 

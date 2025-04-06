@@ -1,9 +1,6 @@
 import random
 from core.io_interface import TerminalIO
 
-# Istanza globale dell'interfaccia di I/O
-io = TerminalIO()
-
 # Mappa delle abilità associate alle caratteristiche (D&D 5e style)
 ABILITA_ASSOCIATE = {
     "acrobazia": "destrezza",
@@ -74,25 +71,80 @@ class Entita:
         self.armatura = None
         self.accessori = []
         
-    def subisci_danno(self, danno):
+        # Contesto di gioco
+        self.gioco = None
+        
+    def set_game_context(self, gioco):
+        """
+        Imposta il contesto di gioco per questa entità.
+        
+        Args:
+            gioco: L'istanza del gioco
+        """
+        self.gioco = gioco
+        
+        # Propaga il contesto agli oggetti contenuti nell'inventario
+        for item in self.inventario:
+            if hasattr(item, 'set_game_context'):
+                item.set_game_context(gioco)
+                
+    def subisci_danno(self, danno, gioco=None):
         """Metodo unificato per subire danno, considerando la difesa"""
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         danno_effettivo = max(1, danno - self.difesa)
         self.hp = max(0, self.hp - danno_effettivo)
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} subisce {danno_effettivo} danni!")
+            
         return self.hp > 0
         
-    def attacca(self, bersaglio):
+    def attacca(self, bersaglio, gioco=None):
         """Metodo unificato per attaccare"""
-        danno = self.modificatore_forza
-        io.mostra_messaggio(f"{self.nome} attacca {bersaglio.nome} e infligge {danno} danni!")
-        return bersaglio.subisci_danno(danno)
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
         
-    def cura(self, quantita):
+        danno = self.modificatore_forza
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} attacca {bersaglio.nome} e infligge {danno} danni!")
+            
+        return bersaglio.subisci_danno(danno, game_ctx)
+        
+    def cura(self, quantita, gioco=None):
         """Cura l'entità"""
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         self.hp = min(self.hp_max, self.hp + quantita)
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} recupera {quantita} punti vita!")
         
     def aggiungi_item(self, item):
         """Aggiunge un item all'inventario"""
-        self.inventario.append(item)
+        # Se l'item è una stringa, verifichiamo se corrisponde a un oggetto conosciuto
+        if isinstance(item, str):
+            from util.data_manager import get_data_manager
+            from items.oggetto import Oggetto
+            
+            data_manager = get_data_manager()
+            
+            # Cerca nelle pozioni
+            pozioni = data_manager.load_data("oggetti", "pozioni.json")
+            for pozione in pozioni:
+                if pozione["nome"] == item or (item == "Pozione" and pozione["nome"] == "Pozione di cura"):
+                    # Crea un oggetto corrispondente
+                    oggetto = Oggetto.from_dict(pozione)
+                    self.inventario.append(oggetto)
+                    return
+                    
+            # Se non trova corrispondenze, aggiungi come stringa
+            self.inventario.append(item)
+        else:
+            self.inventario.append(item)
         
     def rimuovi_item(self, nome_item):
         """Rimuove un item dall'inventario"""
@@ -106,17 +158,25 @@ class Entita:
         """Verifica se l'entità è viva"""
         return self.hp > 0
         
-    def ferisci(self, danno):
+    def ferisci(self, danno, gioco):
         """Metodo alternativo per subire danno, per compatibilità"""
-        return self.subisci_danno(danno)
+        return self.subisci_danno(danno, gioco)
         
-    def aggiungi_oro(self, quantita):
+    def aggiungi_oro(self, quantita, gioco=None):
         """Aggiunge oro all'entità"""
-        self.oro += quantita
-        io.mostra_messaggio(f"{self.nome} ha ricevuto {quantita} monete d'oro! (Totale: {self.oro})")
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
         
-    def guadagna_esperienza(self, quantita):
+        self.oro += quantita
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} ha ricevuto {quantita} monete d'oro! (Totale: {self.oro})")
+        
+    def guadagna_esperienza(self, quantita, gioco=None):
         """Aggiunge esperienza e verifica se è possibile salire di livello"""
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         self.esperienza += quantita
         
         # Verifica salita di livello: 100 * livello attuale
@@ -125,12 +185,15 @@ class Entita:
         if self.esperienza >= esperienza_necessaria:
             self.livello += 1
             self.esperienza -= esperienza_necessaria
-            self._sali_livello()
+            self._sali_livello(game_ctx)
             return True
         return False
         
-    def _sali_livello(self):
+    def _sali_livello(self, gioco=None):
         """Applica i miglioramenti per il salire di livello"""
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         self.hp_max += 5
         self.hp = self.hp_max  # Cura completamente quando sale di livello
         
@@ -146,10 +209,15 @@ class Entita:
         setattr(self, nome_modificatore, self.calcola_modificatore(getattr(self, caratteristica_da_aumentare)))
         
         self.difesa += 1
-        io.mostra_messaggio(f"\n*** {self.nome} è salito al livello {self.livello}! ***")
-        io.mostra_messaggio(f"La sua {caratteristica_da_aumentare.replace('_base', '')}, difesa e salute massima sono aumentate!")
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"\n*** {self.nome} è salito al livello {self.livello}! ***")
+            game_ctx.io.mostra_messaggio(f"La sua {caratteristica_da_aumentare.replace('_base', '')}, difesa e salute massima sono aumentate!")
 
-    def prova_abilita(self, abilita, difficolta):
+    def prova_abilita(self, abilita, difficolta, gioco=None):
+        # Usa il contesto di gioco memorizzato se non viene fornito
+        game_ctx = gioco if gioco else getattr(self, 'gioco', None)
+        
         dado = Dado(20)
         tiro = dado.tira()
         
@@ -163,11 +231,14 @@ class Entita:
             modificatore = getattr(self, f"modificatore_{abilita}", 0)
             
         risultato = tiro + modificatore
-        io.mostra_messaggio(f"{self.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
+        
+        if game_ctx:
+            game_ctx.io.mostra_messaggio(f"{self.nome} tira un {tiro} + {modificatore} ({abilita}) = {risultato}")
+            
         return risultato >= difficolta
 
-    def tiro_salvezza(self, tipo, difficolta):
-        return self.prova_abilita(tipo, difficolta)
+    def tiro_salvezza(self, tipo, difficolta, gioco=None):
+        return self.prova_abilita(tipo, difficolta, gioco)
 
     def calcola_modificatore(self, valore):
         return (valore - 10) // 2
@@ -257,24 +328,69 @@ class Entita:
             return (self.x, self.y)
         return None
 
-    def modificatore_abilita(self, nome_abilita):
+    def modificatore_abilita(self, nome_abilita, gioco):
         """Calcola il modificatore totale di un'abilità considerando la competenza"""
         caratteristica = ABILITA_ASSOCIATE.get(nome_abilita.lower())
         if not caratteristica:
-            io.mostra_messaggio(f"Abilità sconosciuta: {nome_abilita}")
+            gioco.io.mostra_messaggio(f"Abilità sconosciuta: {nome_abilita}")
             return 0
 
         modificatore_base = getattr(self, f"modificatore_{caratteristica}", 0)
         competenza_bonus = self.bonus_competenza if self.abilita_competenze.get(nome_abilita.lower()) else 0
         return modificatore_base + competenza_bonus
 
-    def to_dict(self):
+    def to_dict(self, already_serialized=None):
         """
         Converte l'entità in un dizionario per la serializzazione.
+        Gestisce riferimenti circolari attraverso il parametro already_serialized.
         
+        Args:
+            already_serialized (set, optional): Set di ID di oggetti già serializzati
+            
         Returns:
             dict: Rappresentazione dell'entità in formato dizionario
         """
+        # Per retrocompatibilità, se il metodo è chiamato con un numero errato di parametri
+        # comportati come il vecchio metodo
+        import inspect
+        if already_serialized is not None and not isinstance(already_serialized, set):
+            # Potrebbe essere un caso di chiamata errata, ignora il parametro
+            already_serialized = None
+            
+        # Inizializza il set se non fornito
+        if already_serialized is None:
+            already_serialized = set()
+            
+        # Evita riferimenti circolari
+        if id(self) in already_serialized:
+            return {"reference_id": id(self), "nome": self.nome, "tipo": "riferimento"}
+            
+        # Aggiungi questo oggetto al set
+        already_serialized.add(id(self))
+        
+        # Funzione per serializzare in modo sicuro
+        def serialize_safely(item):
+            if item is None:
+                return None
+            if not hasattr(item, 'to_dict'):
+                if isinstance(item, (str, int, float, bool)):
+                    return item
+                return getattr(item, 'nome', str(item))
+                
+            # Tenta prima con already_serialized
+            try:
+                return item.to_dict(already_serialized)
+            except TypeError:
+                # Se fallisce, tenta senza parametro
+                return item.to_dict()
+        
+        # Serializza liste in modo sicuro
+        def serialize_list(items):
+            result = []
+            for item in items:
+                result.append(serialize_safely(item))
+            return result
+        
         return {
             "nome": self.nome,
             "hp": self.hp,
@@ -292,49 +408,66 @@ class Entita:
             "abilita_competenze": self.abilita_competenze,
             "bonus_competenza": self.bonus_competenza,
             "difesa": self.difesa,
-            "inventario": [obj.to_dict() if hasattr(obj, 'to_dict') else (obj if isinstance(obj, str) else obj.nome) for obj in self.inventario],
+            "inventario": serialize_list(self.inventario),
             "oro": self.oro,
             "esperienza": self.esperienza,
             "livello": self.livello,
-            "arma": self.arma.to_dict() if self.arma and hasattr(self.arma, 'to_dict') else (self.arma if isinstance(self.arma, str) else (self.arma.nome if self.arma else None)),
-            "armatura": self.armatura.to_dict() if self.armatura and hasattr(self.armatura, 'to_dict') else (self.armatura if isinstance(self.armatura, str) else (self.armatura.nome if self.armatura else None)),
-            "accessori": [acc.to_dict() if hasattr(acc, 'to_dict') else (acc if isinstance(acc, str) else acc.nome) for acc in self.accessori],
+            "arma": serialize_safely(self.arma),
+            "armatura": serialize_safely(self.armatura),
+            "accessori": serialize_list(self.accessori),
         }
     
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data, loaded_objects=None):
         """
-        Crea un'istanza di Entita da un dizionario.
+        Crea un'istanza di Entità da un dizionario.
+        Gestisce riferimenti circolari attraverso loaded_objects.
         
         Args:
             data (dict): Dizionario con i dati dell'entità
+            loaded_objects (dict, optional): Dizionario di oggetti già caricati
             
         Returns:
-            Entita: Nuova istanza di Entita
+            Entita: Nuova istanza di Entità
         """
+        # Gestisci il caso dei riferimenti
+        if data.get("tipo") == "riferimento" and "reference_id" in data:
+            ref_id = data["reference_id"]
+            if loaded_objects and ref_id in loaded_objects:
+                return loaded_objects[ref_id]
+            return None
+        
+        # Crea l'oggetto base
         entita = cls(
             nome=data.get("nome", "Sconosciuto"),
             hp=data.get("hp", 10),
             hp_max=data.get("hp_max", 10),
             forza_base=data.get("forza_base", 10),
-            difesa=data.get("difesa", 0),
             destrezza_base=data.get("destrezza_base", 10),
             costituzione_base=data.get("costituzione_base", 10),
             intelligenza_base=data.get("intelligenza_base", 10),
             saggezza_base=data.get("saggezza_base", 10),
             carisma_base=data.get("carisma_base", 10),
+            difesa=data.get("difesa", 0),
             token=data.get("token", "E")
         )
         
+        # Registra l'oggetto per riferimenti futuri
+        if loaded_objects is not None:
+            loaded_objects[id(entita)] = entita
+        
+        # Imposta attributi aggiuntivi
         entita.x = data.get("x", 0)
         entita.y = data.get("y", 0)
-        entita.mappa_corrente = data.get("mappa_corrente")
+        entita.mappa_corrente = data.get("mappa_corrente", None)
         entita.abilita_competenze = data.get("abilita_competenze", {})
         entita.bonus_competenza = data.get("bonus_competenza", 2)
+        entita.difesa = data.get("difesa", 0)
         entita.oro = data.get("oro", 0)
         entita.esperienza = data.get("esperienza", 0)
         entita.livello = data.get("livello", 1)
         
-        # Gli oggetti più complessi verranno gestiti dalle sottoclassi
+        # Gli oggetti complessi (inventario, arma, armatura, accessori) 
+        # verranno gestiti nelle classi derivate
         
         return entita

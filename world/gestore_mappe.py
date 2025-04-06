@@ -3,164 +3,267 @@ import random
 from items.oggetto_interattivo import OggettoInterattivo, Porta, Baule, Leva, Trappola
 from entities.giocatore import Giocatore
 from entities.npg import NPG
+from entities.nemico import Nemico
+from world.mappa import MappaComponente, MappaCaricatore
+from pathlib import Path
+from util.data_manager import get_data_manager
+import json
+import os
+import logging
+from util.config import get_save_path, create_backup, SAVE_FORMAT_VERSION
 
 class GestitoreMappe:
     def __init__(self):
         """Inizializza il gestore mappe"""
         self.mappe = {}  # Nome mappa -> oggetto Mappa
         self.mappa_attuale = None
+        self.data_manager = get_data_manager()
+        self.mappa_caricatore = MappaCaricatore(Path("data/mappe"))
         self.inizializza_mappe()
         
     def inizializza_mappe(self):
-        """Crea e configura tutte le mappe del gioco"""
-        # Crea mappa taverna
-        taverna = Mappa("taverna", 25, 20, "interno")
-        self._configura_mappa_taverna(taverna)
+        """Crea e configura tutte le mappe del gioco esclusivamente da JSON"""
+        # Carica le mappe da file JSON
+        mappe_json = self.carica_mappe_da_json()
         
-        # Crea mappa mercato
-        mercato = Mappa("mercato", 35, 25, "esterno")
-        self._configura_mappa_mercato(mercato)
+        if not mappe_json:
+            logging.error("Nessuna mappa JSON trovata. Il gioco non può continuare senza mappe.")
+            raise ValueError("Nessuna mappa JSON trovata in data/mappe. Controlla che i file JSON delle mappe esistano.")
+            
+        # Usa le mappe caricate da JSON
+        for nome, mappa in mappe_json.items():
+            self.mappe[nome] = mappa
+            # Carica gli oggetti interattivi e NPG per questa mappa
+            self.carica_oggetti_interattivi_da_json(mappa, nome)
+            self.carica_npg_da_json(mappa, nome)
         
-        # Crea mappa cantina
-        cantina = Mappa("cantina", 20, 15, "dungeon")
-        self._configura_mappa_cantina(cantina)
+        logging.info(f"Caricate {len(mappe_json)} mappe da file JSON")
         
-        # Aggiungi le mappe al gestore
-        self.mappe["taverna"] = taverna
-        self.mappe["mercato"] = mercato
-        self.mappe["cantina"] = cantina
+        # Imposta la mappa "taverna" come mappa attuale di default
+        if "taverna" in self.mappe:
+            self.imposta_mappa_attuale("taverna")
+        elif self.mappe:
+            # Altrimenti, usa la prima mappa disponibile
+            primo_nome = next(iter(self.mappe.keys()))
+            self.imposta_mappa_attuale(primo_nome)
+            logging.info(f"Mappa taverna non trovata, impostata mappa {primo_nome} come default")
+        else:
+            logging.error("Nessuna mappa caricata")
         
-    def _configura_mappa_taverna(self, mappa):
-        """Configura il layout della mappa taverna"""
-        # Layout di base della taverna usando una stringa multi-linea con griglia migliorata
-        # Legenda:
-        # # = muro
-        # . = pavimento
-        # P = posizione iniziale giocatore
-        layout = """
-#########################
-#.......................#
-#.......................#
-#.......................#
-#.......##..##..........#
-#.......##..##..........#
-#.......................#
-#.......................#
-#...........P...........#
-#.......................#
-#.......................#
-#.......................#
-#.....##....##...........#
-#.....##....##...........#
-#.......................#
-#.......................#
-#.......................#
-#.......................#
-#.......................#
-#########################
-"""
-        mappa.carica_layout_da_stringa(layout)
+    def carica_mappe_da_json(self):
+        """
+        Carica le mappe dai file JSON nella directory data/mappe.
         
-        # Collegamento con altre mappe (porte)
-        # Porta che collega la taverna alla cantina
-        x, y = 22, 9  # Posizione della porta
-        mappa.imposta_muro(x, y)  # La porta è un "muro speciale"
+        Returns:
+            dict: Dizionario di mappe caricate (nome -> oggetto Mappa) o {} se fallisce
+        """
+        mappe = {}
         
-        # Porta che collega la taverna al mercato
-        x, y = 12, 18  # Posizione porta d'uscita
-        mappa.imposta_muro(x, y)  # La porta è un "muro speciale"
+        try:
+            # Ottieni l'elenco di tutti i file .json nella directory mappe
+            file_mappe = self.mappa_caricatore.elenca_mappe_disponibili()
+            
+            if not file_mappe:
+                logging.error("Nessun file mappa trovato in data/mappe")
+                return {}
+                
+            # Carica ogni mappa
+            for nome_file in file_mappe:
+                try:
+                    mappa = self.mappa_caricatore.carica_mappa(nome_file)
+                    # Verifica che la mappa sia valida
+                    if self._verifica_mappa_valida(mappa):
+                        mappe[mappa.nome] = mappa
+                        logging.info(f"Mappa caricata: {mappa.nome}")
+                    else:
+                        logging.error(f"Mappa {nome_file} non valida, ignorata")
+                except Exception as e:
+                    logging.error(f"Errore nel caricamento della mappa {nome_file}: {e}")
+                    import traceback
+                    logging.error(traceback.format_exc())
+            
+            return mappe
+        except Exception as e:
+            logging.error(f"Errore generale nel caricamento delle mappe: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
+            return {}
+    
+    def _verifica_mappa_valida(self, mappa):
+        """
+        Verifica che una mappa sia valida e completa.
         
-        # Esempi di uso dei token personalizzati
-        durnan = NPG("Durnan", token="D")  # "D" per Durnan
-        mappa.aggiungi_npg(durnan, 6, 6)
+        Args:
+            mappa: L'oggetto Mappa da verificare
+            
+        Returns:
+            bool: True se la mappa è valida, False altrimenti
+        """
+        # Verifica che la mappa abbia un nome
+        if not mappa.nome:
+            logging.error("Mappa senza nome")
+            return False
+            
+        # Verifica che la griglia sia presente e delle dimensioni corrette
+        if not mappa.griglia:
+            logging.error(f"Mappa {mappa.nome} senza griglia")
+            return False
+            
+        # Verifica che le dimensioni della griglia corrispondano a quelle dichiarate
+        if len(mappa.griglia) != mappa.altezza:
+            logging.error(f"Mappa {mappa.nome}: altezza dichiarata {mappa.altezza} ma griglia ha {len(mappa.griglia)} righe")
+            return False
+            
+        for riga in mappa.griglia:
+            if len(riga) != mappa.larghezza:
+                logging.error(f"Mappa {mappa.nome}: larghezza dichiarata {mappa.larghezza} ma riga ha {len(riga)} colonne")
+                return False
         
-        elminster = NPG("Elminster", token="E")  # "E" per Elminster
-        mappa.aggiungi_npg(elminster, 9, 9)
+        # Verifica che la posizione iniziale sia impostata e valida
+        x, y = mappa.pos_iniziale_giocatore
+        if x == 0 and y == 0:
+            logging.error(f"Mappa {mappa.nome}: posizione iniziale del giocatore non impostata")
+            return False
+            
+        if x < 0 or x >= mappa.larghezza or y < 0 or y >= mappa.altezza:
+            logging.error(f"Mappa {mappa.nome}: posizione iniziale del giocatore ({x}, {y}) fuori dai limiti della mappa")
+            return False
+            
+        # Se la posizione iniziale è in un muro, è un errore
+        if mappa.griglia[y][x] != 0:  # Assumendo che 0 sia lo spazio vuoto
+            logging.error(f"Mappa {mappa.nome}: posizione iniziale del giocatore ({x}, {y}) è in un muro")
+            return False
+            
+        # Tutte le verifiche sono passate
+        return True
+    
+    def salva_mappe_su_json(self):
+        """
+        Salva tutte le mappe correnti in file JSON.
         
-        porta_cantina = Porta("Porta della cantina", "Una porta che conduce alla cantina.", 
-                             stato="chiusa", richiede_chiave=True, posizione="taverna", 
-                             posizione_destinazione="cantina", token="D")
-        mappa.aggiungi_porta(porta_cantina, 22, 9, "cantina", 1, 7)
+        Returns:
+            bool: True se il salvataggio è riuscito per tutte le mappe
+        """
+        successo = True
         
-        mirt = NPG("Mirt", token="M")  # "M" per Mirt
-        mappa.aggiungi_npg(mirt, 5, 5)  # o qualsiasi coordinata appropriata
+        for nome, mappa in self.mappe.items():
+            try:
+                # Salva la mappa in formato JSON
+                if not self.mappa_caricatore.salva_mappa(mappa):
+                    successo = False
+                    logging.error(f"Errore nel salvataggio della mappa {nome}")
+            except Exception as e:
+                successo = False
+                logging.error(f"Errore durante il salvataggio della mappa {nome}: {e}")
+                
+        return successo
+
+    def carica_npg_da_json(self, mappa, nome_mappa):
+        """
+        Carica gli NPC per una mappa dalle configurazioni JSON.
         
-        # Aggiungi manualmente gli oggetti interattivi principali
-        bancone = OggettoInterattivo("Bancone", "Un lungo bancone di legno...", token="O")
-        mappa.aggiungi_oggetto(bancone, 4, 4)
+        Args:
+            mappa (Mappa): Oggetto mappa in cui posizionare gli NPC
+            nome_mappa (str): Nome della mappa
+        """
+        try:
+            # Nome del file: mappe_npg.json
+            # Struttura: {"taverna": [{"nome": "Durnan", "posizione": [5, 5]}, ...], ...}
+            npg_config = self.data_manager.load_data("npc", "mappe_npg.json").get(nome_mappa, [])
+            
+            if not npg_config:
+                logging.info(f"Nessuna configurazione di NPG trovata per la mappa {nome_mappa}")
+                return
+                
+            # Per ogni configurazione di NPG
+            for config in npg_config:
+                nome_npg = config.get("nome")
+                posizione = config.get("posizione")
+                
+                if not nome_npg or not posizione or len(posizione) != 2:
+                    logging.warning(f"Configurazione NPG non valida: {config}")
+                    continue
+                    
+                # Crea l'NPG
+                npg = NPG(nome_npg)
+                
+                # Posiziona l'NPG sulla mappa
+                x, y = posizione
+                # Verifica che x e y siano validi e all'interno dei limiti della mappa
+                if 0 <= x < mappa.larghezza and 0 <= y < mappa.altezza:
+                    # Verifica che la posizione non sia già occupata
+                    if (x, y) in mappa.oggetti or (x, y) in mappa.npg:
+                        logging.warning(f"Posizione ({x}, {y}) già occupata, impossibile posizionare NPG {nome_npg}")
+                        continue
+                        
+                    # Verifica che la posizione non sia un muro
+                    if mappa.griglia[y][x] != 0:  # Assumendo che 0 sia lo spazio vuoto
+                        logging.warning(f"Posizione ({x}, {y}) è un muro, impossibile posizionare NPG {nome_npg}")
+                        continue
+                        
+                    mappa.aggiungi_npg(npg, x, y)
+                    logging.info(f"NPG {nome_npg} posizionato in ({x}, {y}) sulla mappa {nome_mappa}")
+                else:
+                    logging.warning(f"Posizione non valida per NPG {nome_npg}: ({x}, {y})")
+        except Exception as e:
+            logging.error(f"Errore durante il caricamento degli NPG per la mappa {nome_mappa}: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
+    
+    def carica_oggetti_interattivi_da_json(self, mappa, nome_mappa):
+        """
+        Carica gli oggetti interattivi per una mappa dalle configurazioni JSON.
         
-        camino = OggettoInterattivo("Camino", "Un grande camino in pietra...", token="O")
-        mappa.aggiungi_oggetto(camino, 15, 3)
-        
-        baule = Baule("Baule nascosto", "Un piccolo baule nascosto...", token="C")
-        mappa.aggiungi_oggetto(baule, 8, 10)
-        
-        leva = Leva("Leva segreta", "Una leva nascosta dietro un quadro.", token="L")
-        mappa.aggiungi_oggetto(leva, 20, 5)
-        
-        trappola = Trappola("Trappola nel pavimento", "Una parte del pavimento...", token="T")
-        mappa.aggiungi_oggetto(trappola, 10, 15)
-        
-    def _configura_mappa_mercato(self, mappa):
-        """Configura il layout della mappa mercato"""
-        # Layout di base del mercato con griglia migliorata
-        layout = """
-###################################
-#.................................#
-#.................................#
-#.................................#
-#.................................#
-#....##.......##.......##........#
-#....##.......##.......##........#
-#.................................#
-#.................................#
-#.................................#
-#................P................#
-#.................................#
-#.................................#
-#.................................#
-#.................................#
-#....##.......##.......##........#
-#....##.......##.......##........#
-#.................................#
-#.................................#
-#.................................#
-#.................................#
-#.................................#
-#.................................#
-#.................................#
-###################################
-"""
-        mappa.carica_layout_da_stringa(layout)
-        
-        # Collegamento con la taverna
-        x, y = 17, 1  # Posizione porta d'ingresso alla taverna
-        mappa.imposta_muro(x, y)  # La porta è un "muro speciale"
-        
-    def _configura_mappa_cantina(self, mappa):
-        """Configura il layout della mappa cantina"""
-        # Layout di base della cantina con griglia migliorata
-        layout = """
-####################
-#..................#
-#..................#
-#..................#
-#......####........#
-#..................#
-#..................#
-#.P................#
-#..................#
-#..................#
-#..................#
-#..................#
-#..................#
-#..................#
-####################
-"""
-        mappa.carica_layout_da_stringa(layout)
-        
-        # Collegamento con la taverna
-        x, y = 1, 7  # Posizione scala per tornare alla taverna
+        Args:
+            mappa (Mappa): Oggetto mappa in cui posizionare gli oggetti
+            nome_mappa (str): Nome della mappa
+        """
+        try:
+            # Ottieni la configurazione degli oggetti per questa mappa
+            oggetti_config = self.data_manager.get_map_objects(nome_mappa)
+            
+            # Se non ci sono configurazioni, avvisa ma non è un errore critico
+            if not oggetti_config:
+                logging.warning(f"Nessuna configurazione di oggetti trovata per la mappa {nome_mappa}")
+                return
+            
+            # Per ogni configurazione di oggetto
+            for config in oggetti_config:
+                nome_oggetto = config.get("nome")
+                posizione = config.get("posizione")
+                
+                if not nome_oggetto or not posizione or len(posizione) != 2:
+                    logging.warning(f"Configurazione oggetto non valida: {config}")
+                    continue
+                    
+                # Carica l'oggetto interattivo dal JSON
+                oggetto = OggettoInterattivo.carica_da_json(nome_oggetto)
+                
+                if oggetto:
+                    # Posiziona l'oggetto sulla mappa
+                    x, y = posizione
+                    # Verifica che x e y siano validi e all'interno dei limiti della mappa
+                    if 0 <= x < mappa.larghezza and 0 <= y < mappa.altezza:
+                        # Verifica che la posizione non sia già occupata
+                        if (x, y) in mappa.oggetti or (x, y) in mappa.npg:
+                            logging.warning(f"Posizione ({x}, {y}) già occupata, impossibile posizionare oggetto {nome_oggetto}")
+                            continue
+                            
+                        # Verifica che la posizione non sia un muro
+                        if mappa.griglia[y][x] != 0:  # Assumendo che 0 sia lo spazio vuoto
+                            logging.warning(f"Posizione ({x}, {y}) è un muro, impossibile posizionare oggetto {nome_oggetto}")
+                            continue
+                            
+                        mappa.aggiungi_oggetto(oggetto, x, y)
+                        logging.info(f"Oggetto {nome_oggetto} posizionato in ({x}, {y}) sulla mappa {nome_mappa}")
+                    else:
+                        logging.warning(f"Posizione non valida per oggetto {nome_oggetto}: ({x}, {y})")
+                else:
+                    logging.warning(f"Oggetto {nome_oggetto} non trovato nei dati JSON")
+        except Exception as e:
+            logging.error(f"Errore durante il caricamento degli oggetti per la mappa {nome_mappa}: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
         
     def ottieni_mappa(self, nome):
         """Restituisce una mappa per nome"""
@@ -179,215 +282,361 @@ class GestitoreMappe:
         if not mappa:
             return False
             
-        # Posizioni predefinite per gli oggetti interattivi
-        pos_oggetti = {
-            # Taverna
-            "bancone": (4, 4),
-            "camino": (15, 3),
-            "baule_nascondiglio": (8, 10),
-            "porta_cantina": (22, 9),
-            "leva_segreta": (20, 5),
-            "trappola_pavimento": (10, 15),
-            "altare_magico": (18, 15)
-        }
+        # Ottieni le posizioni degli oggetti interattivi dalla configurazione JSON
+        oggetti_config = self.data_manager.get_map_objects(nome_mappa)
+        pos_oggetti = {}
         
-        # Posiziona gli oggetti interattivi sulla mappa
+        if oggetti_config:
+            for config in oggetti_config:
+                nome_oggetto = config.get("nome")
+                posizione = config.get("posizione")
+                if nome_oggetto and posizione and len(posizione) == 2:
+                    pos_oggetti[nome_oggetto] = tuple(posizione)
+        
+        # Posiziona gli oggetti interattivi sulla mappa usando le posizioni da JSON
         for chiave, oggetto in stato.oggetti_interattivi.items():
-            # Verifica se abbiamo una posizione predefinita
             if chiave in pos_oggetti:
                 x, y = pos_oggetti[chiave]
-                if mappa.is_posizione_valida(x, y) and (x, y) not in mappa.oggetti and (x, y) not in mappa.npg:
-                    mappa.aggiungi_oggetto(oggetto, x, y)
-                    continue
-            
-            # Altrimenti posiziona in modo casuale
-            posizionato = False
-            tentativi = 0
-            
-            while not posizionato and tentativi < 20:
-                x = random.randint(1, mappa.larghezza - 2)
-                y = random.randint(1, mappa.altezza - 2)
-                
-                # Verifica se la posizione è valida e libera
-                if mappa.is_posizione_valida(x, y) and (x, y) not in mappa.oggetti and (x, y) not in mappa.npg:
-                    mappa.aggiungi_oggetto(oggetto, x, y)
-                    posizionato = True
-                
-                tentativi += 1
+                if 0 <= x < mappa.larghezza and 0 <= y < mappa.altezza:
+                    if (x, y) not in mappa.oggetti and (x, y) not in mappa.npg:
+                        mappa.aggiungi_oggetto(oggetto, x, y)
+                    else:
+                        logging.warning(f"Posizione ({x}, {y}) già occupata, impossibile posizionare oggetto {chiave}")
+                else:
+                    logging.warning(f"Posizione non valida per oggetto {chiave}: ({x}, {y})")
+            else:
+                logging.warning(f"Nessuna posizione definita per oggetto {chiave}, oggetto non posizionato")
         
-        # Posizioni predefinite per gli NPG
-        pos_npg = {
-            "Durnan": (6, 6),
-            "Elminster": (9, 9),
-            "Mirt": (5, 5)  # Usa la stessa posizione definita in _configura_mappa_taverna
-        }
+        # Carica posizioni NPG da JSON
+        npg_config = self.data_manager.load_data("npc", "mappe_npg.json").get(nome_mappa, [])
+        pos_npg = {}
         
-        # Posiziona NPG
+        if npg_config:
+            for config in npg_config:
+                nome_npg = config.get("nome")
+                posizione = config.get("posizione")
+                if nome_npg and posizione and len(posizione) == 2:
+                    pos_npg[nome_npg] = tuple(posizione)
+        
+        # Posiziona gli NPG sulla mappa usando le posizioni da JSON
         for nome, npg in stato.npg_presenti.items():
-            # Verifica se abbiamo una posizione predefinita
             if nome in pos_npg:
                 x, y = pos_npg[nome]
-                if mappa.is_posizione_valida(x, y) and (x, y) not in mappa.oggetti and (x, y) not in mappa.npg:
-                    mappa.aggiungi_npg(npg, x, y)
-                    continue
-                
-            # Altrimenti posiziona in modo casuale
-            posizionato = False
-            tentativi = 0
-            
-            while not posizionato and tentativi < 20:
-                x = random.randint(1, mappa.larghezza - 2)
-                y = random.randint(1, mappa.altezza - 2)
-                
-                # Verifica se la posizione è valida e libera
-                if mappa.is_posizione_valida(x, y) and (x, y) not in mappa.oggetti and (x, y) not in mappa.npg:
-                    mappa.aggiungi_npg(npg, x, y)
-                    posizionato = True
-                
-                tentativi += 1
+                if 0 <= x < mappa.larghezza and 0 <= y < mappa.altezza:
+                    if (x, y) not in mappa.oggetti and (x, y) not in mappa.npg:
+                        mappa.aggiungi_npg(npg, x, y)
+                    else:
+                        logging.warning(f"Posizione ({x}, {y}) già occupata, impossibile posizionare NPG {nome}")
+                else:
+                    logging.warning(f"Posizione non valida per NPG {nome}: ({x}, {y})")
+            else:
+                logging.warning(f"Nessuna posizione definita per NPG {nome}, NPG non posizionato")
             
         return True
-        
+
     def muovi_giocatore(self, giocatore, dx, dy):
         """
-        Muove il giocatore sulla mappa corrente.
+        Gestisce lo spostamento del giocatore sulla mappa.
         
         Args:
-            giocatore: Oggetto giocatore
-            dx, dy: Direzione di movimento
+            giocatore (Giocatore): Il giocatore da muovere
+            dx, dy (int): Delta di spostamento
             
         Returns:
-            bool: True se il movimento è avvenuto, False altrimenti
+            dict: Risultato del movimento con chiavi 'successo', 'messaggio', 'cambio_mappa'
         """
-        if not self.mappa_attuale:
-            return False
+        # Verifica che siamo su una mappa valida
+        if not giocatore.mappa_corrente or giocatore.mappa_corrente not in self.mappe:
+            return {"successo": False, "messaggio": "Mappa non valida", "cambio_mappa": False}
             
+        mappa = self.mappe[giocatore.mappa_corrente]
+        
+        # Calcola la nuova posizione
         nuovo_x = giocatore.x + dx
         nuovo_y = giocatore.y + dy
         
-        # Verifica se il movimento è possibile
-        if self.mappa_attuale.is_posizione_valida(nuovo_x, nuovo_y):
-            # Controlla se c'è una porta
-            destinazione = self.mappa_attuale.ottieni_porta_a(nuovo_x, nuovo_y)
-            if destinazione:
-                # Cambia mappa
-                mappa_dest, x_dest, y_dest = destinazione
-                self.cambia_mappa_giocatore(giocatore, mappa_dest, x_dest, y_dest)
-                return True
-                
-            # Verifica se c'è un oggetto o NPG
-            if (nuovo_x, nuovo_y) in self.mappa_attuale.oggetti or (nuovo_x, nuovo_y) in self.mappa_attuale.npg:
-                # Non permettere di muoversi sopra oggetti o NPG
-                return False
-                
-            # Movimento valido
-            giocatore.x = nuovo_x
-            giocatore.y = nuovo_y
-            return True
-            
-        return False
+        # Verifica che la nuova posizione sia valida
+        if not (0 <= nuovo_x < mappa.larghezza and 0 <= nuovo_y < mappa.altezza):
+            return {"successo": False, "messaggio": "Posizione fuori dai limiti della mappa", "cambio_mappa": False}
         
+        # Verifica se c'è un muro
+        if mappa.griglia[nuovo_y][nuovo_x] != 0:  # Assumendo che 0 sia lo spazio vuoto
+            return {"successo": False, "messaggio": "C'è un muro in quella direzione", "cambio_mappa": False}
+        
+        # Verifica se c'è un oggetto bloccante
+        if (nuovo_x, nuovo_y) in mappa.oggetti:
+            oggetto = mappa.oggetti[(nuovo_x, nuovo_y)]
+            # Verifica se l'oggetto è bloccante
+            if hasattr(oggetto, 'bloccante') and oggetto.bloccante:
+                return {"successo": False, "messaggio": f"C'è un {oggetto.nome} bloccante", "cambio_mappa": False}
+        
+        # Verifica se c'è un NPC (che sono sempre bloccanti)
+        if (nuovo_x, nuovo_y) in mappa.npg:
+            npg = mappa.npg[(nuovo_x, nuovo_y)]
+            return {"successo": False, "messaggio": f"{npg.nome} ti blocca il passaggio", "cambio_mappa": False}
+        
+        # Verifica se c'è una porta
+        porta_dest = None
+        if (nuovo_x, nuovo_y) in mappa.porte:
+            porta_dest = mappa.porte[(nuovo_x, nuovo_y)]
+        
+        # Aggiorna la posizione del giocatore
+        giocatore.x = nuovo_x
+        giocatore.y = nuovo_y
+        
+        # Se c'è una porta, cambia mappa
+        if porta_dest:
+            mappa_dest, x_dest, y_dest = porta_dest
+            # Cambia mappa
+            risultato = self.cambia_mappa_giocatore(giocatore, mappa_dest, x_dest, y_dest)
+            if risultato["successo"]:
+                return {"successo": True, "messaggio": f"Sei entrato in {mappa_dest}", "cambio_mappa": True}
+            else:
+                return {"successo": True, "messaggio": risultato["messaggio"], "cambio_mappa": False}
+        
+        return {"successo": True, "messaggio": "Ti sei spostato", "cambio_mappa": False}
+    
     def cambia_mappa_giocatore(self, giocatore, nome_mappa, x=None, y=None):
         """
-        Sposta il giocatore in una nuova mappa.
+        Cambia la mappa corrente del giocatore.
         
         Args:
-            giocatore: Oggetto giocatore
-            nome_mappa: Nome della mappa di destinazione
-            x, y: Coordinate nella nuova mappa (opzionali)
-        
+            giocatore (Giocatore): Il giocatore da spostare
+            nome_mappa (str): Nome della nuova mappa
+            x, y (int, optional): Posizione in cui posizionare il giocatore nella nuova mappa
+            
         Returns:
-            bool: True se il cambio mappa è avvenuto, False altrimenti
+            dict: Risultato dell'operazione con chiavi 'successo' e 'messaggio'
         """
+        # Verifica che la mappa esista
         if nome_mappa not in self.mappe:
-            return False
+            return {"successo": False, "messaggio": f"Mappa {nome_mappa} non esistente"}
             
-        # Imposta la nuova mappa corrente
-        self.mappa_attuale = self.mappe[nome_mappa]
+        # Ottieni la nuova mappa
+        nuova_mappa = self.mappe[nome_mappa]
         
-        # Se non sono fornite coordinate, usa la posizione iniziale della mappa
+        # Se x e y non sono specificati, usa la posizione iniziale della mappa
         if x is None or y is None:
-            x, y = self.mappa_attuale.pos_iniziale_giocatore
+            x, y = nuova_mappa.pos_iniziale_giocatore
             
-        # Aggiorna la posizione del giocatore
+        # Verifica che la posizione sia valida
+        if not (0 <= x < nuova_mappa.larghezza and 0 <= y < nuova_mappa.altezza):
+            return {"successo": False, "messaggio": f"Posizione ({x}, {y}) fuori dai limiti della mappa {nome_mappa}"}
+            
+        # Verifica che la posizione non sia un muro
+        if nuova_mappa.griglia[y][x] != 0:  # Assumendo che 0 sia lo spazio vuoto
+            return {"successo": False, "messaggio": f"Posizione ({x}, {y}) è un muro nella mappa {nome_mappa}"}
+            
+        # Verifica che la posizione non sia occupata
+        if (x, y) in nuova_mappa.oggetti or (x, y) in nuova_mappa.npg:
+            return {"successo": False, "messaggio": f"Posizione ({x}, {y}) già occupata nella mappa {nome_mappa}"}
+            
+        # Aggiorna la mappa e la posizione del giocatore
+        giocatore.mappa_corrente = nome_mappa
         giocatore.x = x
         giocatore.y = y
-        giocatore.mappa_corrente = nome_mappa
         
-        return True
+        # Imposta la nuova mappa come mappa attuale
+        self.imposta_mappa_attuale(nome_mappa)
         
+        return {"successo": True, "messaggio": f"Sei entrato in {nome_mappa}"}
+    
     def ottieni_info_posizione(self, x, y, mappa=None):
         """
-        Restituisce informazioni sulla posizione.
+        Ottiene informazioni su cosa si trova in una posizione specifica.
         
         Args:
-            x, y: Coordinate
-            mappa: Oggetto mappa (se None, usa mappa_attuale)
+            x, y (int): Coordinate da controllare
+            mappa (Mappa, optional): Mappa in cui cercare. Se None, usa la mappa attuale.
             
         Returns:
-            dict: Informazioni sulla posizione
+            dict: Informazioni sulla posizione con chiavi 'tipo', 'oggetto' e 'messaggio'
         """
-        if mappa is None:
-            mappa = self.mappa_attuale
-            
+        # Se non è specificata una mappa, usa la mappa attuale
+        mappa = mappa or self.mappa_attuale
         if not mappa:
-            return None
+            return {"tipo": "errore", "oggetto": None, "messaggio": "Nessuna mappa attiva"}
             
-        info = {
-            "tipo": "vuoto",
-            "oggetto": None,
-            "npg": None,
-            "porta": None
+        # Verifica che la posizione sia valida
+        if not (0 <= x < mappa.larghezza and 0 <= y < mappa.altezza):
+            return {"tipo": "fuori_mappa", "oggetto": None, "messaggio": "Posizione fuori dai limiti della mappa"}
+            
+        # Verifica se c'è un muro
+        if mappa.griglia[y][x] != 0:  # Assumendo che 0 sia lo spazio vuoto
+            return {"tipo": "muro", "oggetto": None, "messaggio": "C'è un muro qui"}
+            
+        # Verifica se c'è un oggetto
+        if (x, y) in mappa.oggetti:
+            oggetto = mappa.oggetti[(x, y)]
+            return {"tipo": "oggetto", "oggetto": oggetto, "messaggio": f"C'è {oggetto.nome} qui"}
+            
+        # Verifica se c'è un NPC
+        if (x, y) in mappa.npg:
+            npg = mappa.npg[(x, y)]
+            return {"tipo": "npg", "oggetto": npg, "messaggio": f"C'è {npg.nome} qui"}
+            
+        # Verifica se c'è una porta
+        if (x, y) in mappa.porte:
+            porta_dest = mappa.porte[(x, y)]
+            mappa_dest = porta_dest[0]
+            return {"tipo": "porta", "oggetto": porta_dest, "messaggio": f"C'è una porta verso {mappa_dest} qui"}
+            
+        # Se non c'è nulla
+        return {"tipo": "vuoto", "oggetto": None, "messaggio": "Non c'è nulla qui"}
+    
+    def to_dict(self):
+        """
+        Converte il gestore mappe in un dizionario per la serializzazione.
+        
+        Returns:
+            dict: Rappresentazione del gestore mappe in formato dizionario
+        """
+        # Lista delle mappe serializzate
+        mappe_dict = {}
+        for nome, mappa in self.mappe.items():
+            mappe_dict[nome] = mappa.to_dict()
+            
+        return {
+            "mappe": mappe_dict,
+            "mappa_attuale": self.mappa_attuale.nome if self.mappa_attuale else None,
+            "versione": SAVE_FORMAT_VERSION
         }
         
-        # Controlla il tipo di cella
-        if not mappa.is_posizione_valida(x, y):
-            info["tipo"] = "muro"
-        elif (x, y) in mappa.oggetti:
-            info["tipo"] = "oggetto"
-            info["oggetto"] = mappa.oggetti[(x, y)]
-        elif (x, y) in mappa.npg:
-            info["tipo"] = "npg"
-            info["npg"] = mappa.npg[(x, y)]
-        elif (x, y) in mappa.porte:
-            info["tipo"] = "porta"
-            info["porta"] = mappa.porte[(x, y)]
+    def from_dict(self, data):
+        """
+        Carica lo stato del gestore mappe da un dizionario.
+        
+        Args:
+            data (dict): Dizionario contenente lo stato del gestore mappe
             
-        return info
+        Returns:
+            bool: True se il caricamento è avvenuto con successo, False altrimenti
+        """
+        try:
+            from world.mappa import Mappa
+            
+            # Carica le mappe dal dizionario
+            mappe_data = data.get("mappe", {})
+            self.mappe = {}
+            
+            for nome_mappa, mappa_dict in mappe_data.items():
+                self.mappe[nome_mappa] = Mappa.from_dict(mappa_dict)
+                
+                # Carica gli oggetti interattivi per questa mappa
+                self.carica_oggetti_interattivi_da_json(self.mappe[nome_mappa], nome_mappa)
+            
+            # Imposta la mappa attuale
+            mappa_attuale_nome = data.get("mappa_attuale")
+            if mappa_attuale_nome and mappa_attuale_nome in self.mappe:
+                self.mappa_attuale = self.mappe[mappa_attuale_nome]
+            elif self.mappe:
+                # Se non c'è una mappa attuale, imposta la prima disponibile
+                self.mappa_attuale = next(iter(self.mappe.values()))
+            
+            return True
+        except Exception as e:
+            print(f"Errore durante il caricamento delle mappe: {e}")
+            return False
     
     def salva(self, percorso_file="mappe_salvataggio.json"):
         """
         Salva lo stato completo di tutte le mappe e relativi oggetti interattivi.
         
         Args:
-            percorso_file (str): Percorso del file dove salvare i dati
+            percorso_file (str): Percorso del file in cui salvare i dati
             
         Returns:
             bool: True se il salvataggio è avvenuto con successo, False altrimenti
         """
+        logger = logging.getLogger("gioco_rpg")
+        
         try:
-            # Crea un dizionario con tutte le mappe serializzate
-            mappe_data = {}
-            for nome_mappa, mappa in self.mappe.items():
-                # Utilizziamo il metodo to_dict già esistente nella classe Mappa
-                mappe_data[nome_mappa] = mappa.to_dict()
+            # Crea il dizionario di salvataggio
+            dati_salvataggio = self.to_dict()
             
-            # Aggiungi metadati utili
-            dati_salvataggio = {
-                "mappe": mappe_data,
-                "mappa_attuale": self.mappa_attuale.nome if self.mappa_attuale else None,
-                "versione": "1.0.0",
-                "timestamp": __import__('time').time()
-            }
+            # Determina il percorso di salvataggio
+            save_path = get_save_path(percorso_file)
             
-            # Salva su file
-            with open(percorso_file, 'w', encoding='utf-8') as f:
-                import json
+            # Crea un backup se il file esiste già
+            if os.path.exists(save_path):
+                backup_success = create_backup(save_path)
+                if backup_success:
+                    logger.info(f"Backup creato per {save_path}")
+                else:
+                    logger.warning(f"Impossibile creare backup per {save_path}")
+            
+            # Assicura che la directory esista
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            
+            # Salva il file
+            with open(save_path, 'w', encoding='utf-8') as f:
                 json.dump(dati_salvataggio, f, indent=4, ensure_ascii=False)
             
+            # Salva anche gli oggetti interattivi
+            oggetti_salvati = self.salva_oggetti_interattivi_modificati()
+            
+            logger.info(f"Mappe salvate con successo in {save_path}")
             return True
         except Exception as e:
-            print(f"Errore durante il salvataggio delle mappe: {e}")
+            import traceback
+            logging.getLogger("gioco_rpg").error(f"Errore durante il salvataggio delle mappe: {e}")
+            logging.getLogger("gioco_rpg").error(traceback.format_exc())
+            return False
+            
+    def salva_oggetti_interattivi_modificati(self):
+        """
+        Salva gli oggetti interattivi modificati nel sistema JSON.
+        
+        Returns:
+            bool: True se il salvataggio è avvenuto con successo, False altrimenti
+        """
+        logger = logging.getLogger("gioco_rpg")
+        
+        try:
+            # Ottieni tutti gli oggetti interattivi da tutte le mappe
+            oggetti_per_mappa = {}
+            oggetti_interattivi = []
+            
+            for nome_mappa, mappa in self.mappe.items():
+                oggetti_per_mappa[nome_mappa] = []
+                
+                for pos, oggetto in mappa.oggetti.items():
+                    # Aggiungi l'oggetto alla lista generale per il salvataggio
+                    oggetti_interattivi.append(oggetto)
+                    
+                    # Aggiungi la posizione alla lista per questa mappa
+                    oggetti_per_mappa[nome_mappa].append({
+                        "nome": oggetto.nome,
+                        "posizione": list(pos)  # Converti la tupla in lista per la serializzazione JSON
+                    })
+            
+            # Salva le posizioni degli oggetti per ogni mappa
+            for nome_mappa, oggetti in oggetti_per_mappa.items():
+                self.data_manager.save_map_objects(nome_mappa, oggetti)
+                logger.info(f"Salvate posizioni di {len(oggetti)} oggetti per la mappa {nome_mappa}")
+            
+            # Salva gli oggetti interattivi stessi
+            oggetti_salvati = 0
+            oggetti_con_errori = 0
+            
+            for oggetto in oggetti_interattivi:
+                try:
+                    oggetto.salva_su_json()
+                    oggetti_salvati += 1
+                except Exception as e:
+                    logger.error(f"Errore nel salvataggio dell'oggetto {oggetto.nome}: {e}")
+                    oggetti_con_errori += 1
+            
+            if oggetti_con_errori > 0:
+                logger.warning(f"Salvati {oggetti_salvati} oggetti con {oggetti_con_errori} errori")
+            else:
+                logger.info(f"Salvati con successo {oggetti_salvati} oggetti interattivi")
+                
+            return oggetti_con_errori == 0
+        except Exception as e:
+            import traceback
+            logging.getLogger("gioco_rpg").error(f"Errore durante il salvataggio degli oggetti interattivi: {e}")
+            logging.getLogger("gioco_rpg").error(traceback.format_exc())
             return False
 
     def carica(self, percorso_file="mappe_salvataggio.json"):
@@ -400,43 +649,59 @@ class GestitoreMappe:
         Returns:
             bool: True se il caricamento è avvenuto con successo, False altrimenti
         """
+        logger = logging.getLogger("gioco_rpg")
+        
         try:
-            import json
-            import os
+            # Determina il percorso di caricamento
+            save_path = get_save_path(percorso_file)
             
-            # Verifica se il file esiste
-            if not os.path.exists(percorso_file):
+            # Verifica che il file esista
+            if not os.path.exists(save_path):
+                logger.error(f"File di salvataggio non trovato: {save_path}")
                 return False
             
             # Carica il file
-            with open(percorso_file, 'r', encoding='utf-8') as f:
+            with open(save_path, 'r', encoding='utf-8') as f:
                 dati_salvati = json.load(f)
             
-            # Verifica la versione per compatibilità futura
-            versione = dati_salvati.get("versione", "0.0.0")
+            # Verifica la versione
+            versione_salvata = dati_salvati.get("versione", "1.0")
+            if versione_salvata != SAVE_FORMAT_VERSION:
+                logger.warning(f"Versione del salvataggio ({versione_salvata}) diversa da quella corrente ({SAVE_FORMAT_VERSION})")
             
-            # Carica le mappe
+            # Carica le mappe dal dizionario
             mappe_data = dati_salvati.get("mappe", {})
-            if not mappe_data:
-                return False
-            
-            # Ricrea tutte le mappe dal salvataggio
-            from world.mappa import Mappa
             self.mappe = {}
             
             for nome_mappa, mappa_dict in mappe_data.items():
-                # Utilizziamo il metodo from_dict già esistente nella classe Mappa
-                self.mappe[nome_mappa] = Mappa.from_dict(mappa_dict)
+                try:
+                    # Utilizziamo il metodo from_dict già esistente nella classe Mappa
+                    self.mappe[nome_mappa] = Mappa.from_dict(mappa_dict)
+                    
+                    # Carica gli oggetti interattivi per questa mappa
+                    self.carica_oggetti_interattivi_da_json(self.mappe[nome_mappa], nome_mappa)
+                except Exception as e:
+                    logger.error(f"Errore nel caricamento della mappa {nome_mappa}: {str(e)}")
+                    import traceback
+                    logger.error(traceback.format_exc())
             
             # Imposta la mappa attuale
             mappa_attuale_nome = dati_salvati.get("mappa_attuale")
             if mappa_attuale_nome and mappa_attuale_nome in self.mappe:
                 self.mappa_attuale = self.mappe[mappa_attuale_nome]
+                logger.info(f"Mappa attuale impostata a: {mappa_attuale_nome}")
             elif self.mappe:
                 # Se non c'è una mappa attuale, imposta la prima disponibile
                 self.mappa_attuale = next(iter(self.mappe.values()))
-            
+                logger.warning(f"Mappa attuale non specificata, impostata a: {self.mappa_attuale.nome}")
+            else:
+                logger.error("Nessuna mappa caricata")
+                return False
+                
+            logger.info(f"Mappe caricate con successo da {save_path}")
             return True
         except Exception as e:
-            print(f"Errore durante il caricamento delle mappe: {e}")
+            import traceback
+            logging.getLogger("gioco_rpg").error(f"Errore durante il caricamento delle mappe: {e}")
+            logging.getLogger("gioco_rpg").error(traceback.format_exc())
             return False

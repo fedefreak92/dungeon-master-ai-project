@@ -1,0 +1,51 @@
+[
+  {
+    "nome": "Anello della forza",
+    "tipo": "accessorio",
+    "effetto": {"forza": 1},
+    "valore": 50,
+    "descrizione": "Un anello che aumenta la forza di chi lo indossa"
+  },
+  {
+    "nome": "Amuleto della protezione",
+    "tipo": "accessorio",
+    "effetto": {"difesa": 2},
+    "valore": 60,
+    "descrizione": "Un amuleto magico che protegge chi lo indossa"
+  },
+  {
+    "nome": "Guanti del ladro",
+    "tipo": "accessorio",
+    "effetto": {"destrezza": 2},
+    "valore": 45,
+    "descrizione": "Guanti leggeri che aumentano l'agilità delle mani"
+  },
+  {
+    "nome": "Corona della mente",
+    "tipo": "accessorio",
+    "effetto": {"intelligenza": 2, "saggezza": 1},
+    "valore": 75,
+    "descrizione": "Una corona che migliora le capacità mentali"
+  },
+  {
+    "nome": "Stivali della velocità",
+    "tipo": "accessorio",
+    "effetto": {"destrezza": 1, "iniziativa": 2},
+    "valore": 55,
+    "descrizione": "Stivali che consentono di muoversi più rapidamente"
+  },
+  {
+    "nome": "Cintura del gigante",
+    "tipo": "accessorio",
+    "effetto": {"forza": 3, "costituzione": 1},
+    "valore": 85,
+    "descrizione": "Una cintura magica che conferisce forza sovrumana"
+  },
+  {
+    "nome": "Orecchini del carisma",
+    "tipo": "accessorio",
+    "effetto": {"carisma": 2},
+    "valore": 40,
+    "descrizione": "Orecchini che aumentano la presenza e l'influenza sociale"
+  }
+] 

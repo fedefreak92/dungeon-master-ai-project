@@ -1,0 +1,37 @@
+[
+  {
+    "nome": "Chiave arrugginita",
+    "tipo": "chiave",
+    "effetto": {"apre": ["Baule del tesoro"]},
+    "valore": 5,
+    "descrizione": "Una vecchia chiave arrugginita per un baule"
+  },
+  {
+    "nome": "Chiave della cantina",
+    "tipo": "chiave",
+    "effetto": {"apre": ["Porta segreta"]},
+    "valore": 10,
+    "descrizione": "Una chiave che apre la porta della cantina"
+  },
+  {
+    "nome": "Chiave d'oro",
+    "tipo": "chiave",
+    "effetto": {"apre": ["Forziere reale"]},
+    "valore": 100,
+    "descrizione": "Una preziosa chiave d'oro per un forziere importante"
+  },
+  {
+    "nome": "Chiave della torre",
+    "tipo": "chiave",
+    "effetto": {"apre": ["Porta della torre"]},
+    "valore": 15,
+    "descrizione": "Una chiave usata per accedere alla torre dei maghi"
+  },
+  {
+    "nome": "Chiave scheletro",
+    "tipo": "chiave",
+    "effetto": {"apre": ["*"]},
+    "valore": 150,
+    "descrizione": "Una chiave speciale che può aprire qualsiasi serratura semplice"
+  }
+] 

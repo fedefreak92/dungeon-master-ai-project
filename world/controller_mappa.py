@@ -194,7 +194,10 @@ class ControllerMappa:
             
             # Gestione effetti semplici
             if effetto == "riposo":
-                self.giocatore.hp = self.giocatore.hp_max
+                # Usa cura invece di impostare direttamente hp
+                quantita_cura = self.giocatore.hp_max - self.giocatore.hp
+                if quantita_cura > 0:
+                    self.giocatore.cura(quantita_cura, None)  # Passiamo None come gioco, dato che non abbiamo accesso all'oggetto gioco qui
                 return {"npg": npg, "dialogo": dialogo, "messaggio": "Ti sei riposato e hai recuperato tutti i punti vita."}
             # Gestione effetti di scambio oggetti
             elif isinstance(effetto, dict) and effetto["tipo"] == "scambio":
