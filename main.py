@@ -12,39 +12,52 @@ from core.io_interface import TerminalIO
 
 
 def main():
-    # Crea un oggetto temporaneo per l'I/O iniziale
-    io_temp = TerminalIO()
-    io_temp.mostra_messaggio("Benvenuto avventuriero!")
+    # Crea un oggetto per l'I/O che verrà utilizzato per tutta l'applicazione
+    io_handler = TerminalIO()
+    
+    # Creazione oggetto temporaneo gioco per i messaggi iniziali
+    gioco_temp = Game(None, None, io_handler, e_temporaneo=True)
+    
+    gioco_temp.io.mostra_messaggio("Benvenuto avventuriero!")
     
     # Mostra menu iniziale
-    io_temp.mostra_messaggio("1. Nuova Partita")
-    io_temp.mostra_messaggio("2. Carica Partita")
-    scelta = io_temp.richiedi_input("> ")
+    gioco_temp.io.mostra_messaggio("1. Nuova Partita")
+    gioco_temp.io.mostra_messaggio("2. Carica Partita")
+    scelta = gioco_temp.io.richiedi_input("> ")
 
     if scelta == "2":
-        # Crea un gioco temporaneo solo per il caricamento
-        gioco_temp = Game(None, None, e_temporaneo=True)
+        # Crea un gioco temporaneo solo per il caricamento, passando l'io_handler
+        gioco_temp = Game(None, None, io_handler, e_temporaneo=True)
         
         if gioco_temp.carica():
             # Se il caricamento è riuscito, crea il gioco vero con lo stato iniziale
-            gioco = Game(gioco_temp.giocatore, TavernaState())
+            gioco = Game(gioco_temp.giocatore, TavernaState(), io_handler)
+            # Imposta il contesto di gioco nel giocatore
+            if hasattr(gioco.giocatore, 'set_game_context'):
+                gioco.giocatore.set_game_context(gioco)
             # Imposta la mappa corrente
             gioco.gestore_mappe.imposta_mappa_attuale(gioco.giocatore.mappa_corrente)
         else:
             # Se il caricamento fallisce, crea una nuova partita
-            io_temp.mostra_messaggio("Creazione di una nuova partita...")
-            nome = io_temp.richiedi_input("Come ti chiami? ")
-            classe = io_temp.richiedi_input("Che classe sei? Es. guerriero o mago o ladro").lower()
+            gioco_temp.io.mostra_messaggio("Creazione di una nuova partita...")
+            nome = gioco_temp.io.richiedi_input("Come ti chiami? ")
+            classe = gioco_temp.io.richiedi_input("Che classe sei? Es. guerriero o mago o ladro").lower()
             giocatore = Giocatore(nome, classe)
-            gioco = Game(giocatore, TavernaState())
+            gioco = Game(giocatore, TavernaState(), io_handler)
+            # Imposta il contesto di gioco nel giocatore
+            if hasattr(gioco.giocatore, 'set_game_context'):
+                gioco.giocatore.set_game_context(gioco)
     else:
         # Chiedi input iniziale
-        nome = io_temp.richiedi_input("Come ti chiami? ")
-        classe = io_temp.richiedi_input("Che classe sei? Es. guerriero o mago o ladro").lower()
+        nome = gioco_temp.io.richiedi_input("Come ti chiami? ")
+        classe = gioco_temp.io.richiedi_input("Che classe sei? Es. guerriero o mago o ladro").lower()
         giocatore = Giocatore(nome, classe)
         
         # Crea il gioco con il giocatore
-        gioco = Game(giocatore, TavernaState())
+        gioco = Game(giocatore, TavernaState(), io_handler)
+        # Imposta il contesto di gioco nel giocatore
+        if hasattr(gioco.giocatore, 'set_game_context'):
+            gioco.giocatore.set_game_context(gioco)
     
     gioco.esegui()
     
