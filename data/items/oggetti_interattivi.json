@@ -1,0 +1,426 @@
+[
+  {
+    "nome": "Baule del tesoro",
+    "tipo": "baule",
+    "descrizione": "Un grande baule di legno con rinforzi in metallo",
+    "stato": "chiuso",
+    "richiede_chiave": true,
+    "token": "C",
+    "contenuto": [
+      {
+        "nome": "Anello d'oro",
+        "tipo": "accessorio",
+        "effetto": {"carisma": 1},
+        "valore": 30,
+        "descrizione": "Un prezioso anello d'oro"
+      },
+      {
+        "nome": "Pozione di cura",
+        "tipo": "cura",
+        "effetto": {"cura": 10},
+        "valore": 25,
+        "descrizione": "Una pozione che ripristina 10 punti vita"
+      }
+    ]
+  },
+  {
+    "nome": "Baule nascosto",
+    "tipo": "baule",
+    "descrizione": "Un piccolo baule nascosto sotto delle assi di legno",
+    "stato": "chiuso",
+    "richiede_chiave": false,
+    "token": "C",
+    "contenuto": [
+      {
+        "nome": "Chiave della cantina",
+        "tipo": "chiave",
+        "valore": 10,
+        "descrizione": "Una vecchia chiave che apre la porta della cantina"
+      }
+    ]
+  },
+  {
+    "nome": "Porta segreta",
+    "tipo": "porta",
+    "descrizione": "Una porta nascosta dietro uno scaffale",
+    "stato": "chiusa",
+    "richiede_chiave": true,
+    "posizione": "taverna",
+    "posizione_destinazione": "cantina",
+    "token": "D"
+  },
+  {
+    "nome": "Porta del mercato",
+    "tipo": "porta",
+    "descrizione": "Una solida porta di legno che conduce al mercato",
+    "stato": "chiusa",
+    "richiede_chiave": false,
+    "posizione": "taverna",
+    "posizione_destinazione": "mercato",
+    "token": "D"
+  },
+  {
+    "nome": "Leva della parete",
+    "tipo": "leva",
+    "descrizione": "Una leva metallica incastonata nella parete",
+    "stato": "disattivata",
+    "token": "L"
+  },
+  {
+    "nome": "Trappola a spuntoni",
+    "tipo": "trappola",
+    "descrizione": "Spuntoni nascosti nel pavimento",
+    "stato": "attiva",
+    "danno": 8,
+    "difficolta_salvezza": 12,
+    "token": "T"
+  },
+  {
+    "nome": "Trappola a fossa",
+    "tipo": "trappola",
+    "descrizione": "Una fossa nascosta che si apre sotto i piedi",
+    "stato": "attiva",
+    "danno": 5,
+    "difficolta_salvezza": 10,
+    "token": "T"
+  },
+  {
+    "nome": "Altare magico",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Un antico altare con simboli misteriosi",
+    "stato": "inattivo",
+    "token": "O",
+    "descrizioni_stati": {
+      "inattivo": "Un antico altare con simboli misteriosi che sembrano spenti",
+      "attivo": "L'altare emette una luce blu intensa e i simboli brillano",
+      "esaminato": "Noti che l'altare ha delle rune che formano un incantesimo antico"
+    },
+    "stati_possibili": {
+      "inattivo": ["esaminato", "attivo"],
+      "esaminato": ["attivo"],
+      "attivo": ["inattivo"]
+    },
+    "abilita_richieste": {
+      "percezione": "esaminato",
+      "arcano": "attivo"
+    },
+    "difficolta_abilita": {
+      "percezione": 12,
+      "arcano": 15
+    },
+    "messaggi_interazione": {
+      "percezione": "Scrutando attentamente l'altare, noti delle incisioni nascoste",
+      "arcano": "Utilizzando la tua conoscenza arcana, attivi l'antico potere dell'altare"
+    }
+  },
+  {
+    "nome": "Vaso antico",
+    "tipo": "oggetto_rompibile",
+    "descrizione": "Un vaso decorato di ceramica antica",
+    "stato": "integro",
+    "forza_richiesta": 5,
+    "token": "O",
+    "materiali": [
+      {
+        "nome": "Moneta d'oro",
+        "tipo": "comune",
+        "valore": 1,
+        "descrizione": "Una moneta d'oro lucida"
+      }
+    ]
+  },
+  {
+    "nome": "Bancone",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Un lungo bancone di legno dove Durnan serve le bevande",
+    "stato": "normale",
+    "token": "O"
+  },
+  {
+    "nome": "Camino",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Un grande camino in pietra che riscalda la taverna",
+    "stato": "acceso",
+    "token": "O",
+    "descrizioni_stati": {
+      "acceso": "Le fiamme danzano allegramente nel camino, riscaldando l'ambiente",
+      "spento": "Il camino è freddo e le ceneri sono grigie"
+    },
+    "stati_possibili": {
+      "acceso": ["spento"],
+      "spento": ["acceso"]
+    }
+  },
+  {
+    "nome": "Bancarella di frutta",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Una bancarella colorata piena di frutta fresca",
+    "stato": "normale",
+    "token": "O",
+    "contenuto": [
+      {
+        "nome": "Mela",
+        "tipo": "cibo",
+        "effetto": {"cura": 2},
+        "valore": 1,
+        "descrizione": "Una mela rossa e succosa"
+      }
+    ]
+  },
+  {
+    "nome": "Fontana",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Una fontana decorativa al centro della piazza",
+    "stato": "attiva",
+    "token": "O",
+    "descrizioni_stati": {
+      "attiva": "L'acqua zampilla vivacemente dalla fontana",
+      "inattiva": "La fontana è ferma e l'acqua è immobile"
+    },
+    "stati_possibili": {
+      "attiva": ["inattiva"],
+      "inattiva": ["attiva"]
+    }
+  },
+  {
+    "nome": "Statua",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Una statua di un antico eroe della città",
+    "stato": "normale",
+    "token": "O"
+  },
+  {
+    "nome": "bancone",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Un bancone in legno massiccio dove vengono servite le bevande.",
+    "stato": "chiuso",
+    "token": "B",
+    "descrizioni_stati": {
+      "chiuso": "Un bancone in legno massiccio dove vengono servite le bevande.",
+      "aperto": "Il bancone è aperto, puoi vedere alcune bottiglie all'interno."
+    },
+    "stati_possibili": {
+      "chiuso": ["aperto"],
+      "aperto": ["chiuso"]
+    }
+  },
+  {
+    "nome": "camino",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Un camino in pietra con un fuoco scoppiettante.",
+    "stato": "acceso",
+    "token": "F",
+    "descrizioni_stati": {
+      "acceso": "Un camino in pietra con un fuoco scoppiettante che riscalda la stanza.",
+      "spento": "Un camino in pietra con ceneri fredde."
+    },
+    "stati_possibili": {
+      "acceso": ["spento"],
+      "spento": ["acceso"]
+    }
+  },
+  {
+    "nome": "tavolo",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Un tavolo in legno robusto.",
+    "stato": "pulito",
+    "token": "T",
+    "descrizioni_stati": {
+      "pulito": "Un tavolo in legno robusto e ben tenuto.",
+      "sporco": "Un tavolo in legno con alcune macchie di bevande e cibo."
+    },
+    "stati_possibili": {
+      "pulito": ["sporco"],
+      "sporco": ["pulito"]
+    }
+  },
+  {
+    "nome": "sedia",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Una sedia in legno.",
+    "stato": "integra",
+    "token": "S",
+    "descrizioni_stati": {
+      "integra": "Una sedia in legno solida e ben costruita.",
+      "rotta": "Una sedia rotta, con una gamba danneggiata."
+    },
+    "stati_possibili": {
+      "integra": ["rotta"],
+      "rotta": []
+    }
+  },
+  {
+    "nome": "barile",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Un barile di legno pieno di bevande.",
+    "stato": "chiuso",
+    "token": "O",
+    "descrizioni_stati": {
+      "chiuso": "Un barile di legno pieno di bevande, sigillato ermeticamente.",
+      "aperto": "Un barile di legno aperto, contenente un liquido ambrato."
+    },
+    "stati_possibili": {
+      "chiuso": ["aperto"],
+      "aperto": ["chiuso"]
+    }
+  },
+  {
+    "nome": "scala",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Una scala in legno che porta al piano superiore.",
+    "stato": "utilizzabile",
+    "token": "H",
+    "descrizioni_stati": {
+      "utilizzabile": "Una scala in legno che porta al piano superiore.",
+      "bloccata": "Una scala in legno, ma sembra che qualcuno abbia bloccato l'accesso."
+    },
+    "stati_possibili": {
+      "utilizzabile": ["bloccata"],
+      "bloccata": ["utilizzabile"]
+    }
+  },
+  {
+    "nome": "baule_nascondiglio",
+    "tipo": "baule",
+    "descrizione": "Un baule di legno riccamente decorato.",
+    "stato": "chiuso",
+    "token": "C",
+    "richiede_chiave": true,
+    "descrizioni_stati": {
+      "chiuso": "Un baule di legno riccamente decorato, sembra chiuso a chiave.",
+      "aperto": "Un baule di legno riccamente decorato, è aperto e mostra il suo contenuto."
+    },
+    "stati_possibili": {
+      "chiuso": ["aperto"],
+      "aperto": ["chiuso"]
+    }
+  },
+  {
+    "nome": "bancarella",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Una bancarella di un mercante locale.",
+    "stato": "aperta",
+    "token": "V",
+    "descrizioni_stati": {
+      "aperta": "Una bancarella piena di merci colorate e interessanti.",
+      "chiusa": "Una bancarella chiusa, con le tende abbassate."
+    },
+    "stati_possibili": {
+      "aperta": ["chiusa"],
+      "chiusa": ["aperta"]
+    }
+  },
+  {
+    "nome": "fontana",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Una fontana in pietra con acqua fresca.",
+    "stato": "attiva",
+    "token": "W",
+    "descrizioni_stati": {
+      "attiva": "Una fontana in pietra da cui sgorga acqua fresca e cristallina.",
+      "inattiva": "Una fontana in pietra asciutta, non sembra funzionare."
+    },
+    "stati_possibili": {
+      "attiva": ["inattiva"],
+      "inattiva": ["attiva"]
+    }
+  },
+  {
+    "nome": "statua",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Una statua di pietra che raffigura un eroe dimenticato.",
+    "stato": "integra",
+    "token": "A",
+    "descrizioni_stati": {
+      "integra": "Una statua di pietra che raffigura un eroe dimenticato.",
+      "danneggiata": "Una statua di pietra parzialmente danneggiata."
+    },
+    "stati_possibili": {
+      "integra": ["danneggiata"],
+      "danneggiata": ["integra"]
+    }
+  },
+  {
+    "nome": "porta_taverna",
+    "tipo": "porta",
+    "descrizione": "Una porta robusta che conduce alla taverna.",
+    "stato": "chiusa",
+    "token": "D",
+    "richiede_chiave": false,
+    "posizione_destinazione": "taverna",
+    "descrizioni_stati": {
+      "chiusa": "Una porta robusta che conduce alla taverna.",
+      "aperta": "Una porta robusta aperta verso la taverna."
+    },
+    "stati_possibili": {
+      "chiusa": ["aperta"],
+      "aperta": ["chiusa"]
+    }
+  },
+  {
+    "nome": "porta_cantina",
+    "tipo": "porta",
+    "descrizione": "Una porta di legno che porta alla cantina, bloccata da un lucchetto.",
+    "stato": "chiusa",
+    "token": "D",
+    "richiede_chiave": true,
+    "posizione_destinazione": "cantina",
+    "descrizioni_stati": {
+      "chiusa": "Una porta di legno che porta alla cantina, bloccata da un lucchetto.",
+      "aperta": "Una porta di legno aperta che conduce alla cantina buia."
+    },
+    "stati_possibili": {
+      "chiusa": ["aperta"],
+      "aperta": ["chiusa"]
+    }
+  },
+  {
+    "nome": "trappola_pavimento",
+    "tipo": "trappola",
+    "descrizione": "Una sezione del pavimento che sembra sospetta.",
+    "stato": "attiva",
+    "token": "T",
+    "danno": 8,
+    "difficolta_salvezza": 12,
+    "descrizioni_stati": {
+      "attiva": "Una sezione del pavimento che sembra sospetta.",
+      "disattivata": "Una sezione del pavimento con una trappola a spuntoni disattivata."
+    },
+    "stati_possibili": {
+      "attiva": ["disattivata"],
+      "disattivata": ["attiva"]
+    }
+  },
+  {
+    "nome": "altare_magico",
+    "tipo": "oggetto_interattivo",
+    "descrizione": "Un altare di pietra con strane iscrizioni arcane.",
+    "stato": "inattivo",
+    "token": "M",
+    "descrizioni_stati": {
+      "inattivo": "Un altare di pietra con strane iscrizioni arcane.",
+      "attivo": "Un altare di pietra con iscrizioni arcane che emettono un bagliore blu."
+    },
+    "stati_possibili": {
+      "inattivo": ["attivo"],
+      "attivo": ["inattivo"]
+    }
+  },
+  {
+    "nome": "porta_uscita",
+    "tipo": "porta",
+    "descrizione": "Una porta massiccia che conduce all'esterno della cantina.",
+    "stato": "chiusa",
+    "token": "D",
+    "richiede_chiave": false,
+    "posizione_destinazione": "mercato",
+    "descrizioni_stati": {
+      "chiusa": "Una porta massiccia che conduce all'esterno della cantina.",
+      "aperta": "Una porta massiccia aperta verso l'esterno."
+    },
+    "stati_possibili": {
+      "chiusa": ["aperta"],
+      "aperta": ["chiusa"]
+    }
+  }
+] 
