@@ -1,1 +1,40 @@
-
+{
+  "generale": {
+    "titolo": "Guida al gioco",
+    "passi": [
+      {"id": 1, "titolo": "Movimento", "contenuto": "Usa i comandi nord, sud, est, ovest per muoverti"},
+      {"id": 2, "titolo": "Combattimento", "contenuto": "Durante un combattimento, puoi attaccare, difenderti o usare oggetti"},
+      {"id": 3, "titolo": "Interagire", "contenuto": "Usa 'esamina', 'parla', 'raccogli' per interagire con l'ambiente"},
+      {"id": 4, "titolo": "Inventario", "contenuto": "Controlla il tuo inventario per gestire gli oggetti e l'equipaggiamento"}
+    ]
+  },
+  "combattimento": {
+    "titolo": "Guida al combattimento",
+    "passi": [
+      {"id": 1, "titolo": "Iniziare un combattimento", "contenuto": "I combattimenti iniziano quando incontri un nemico o attacchi qualcuno"},
+      {"id": 2, "titolo": "Turni", "contenuto": "Il combattimento si svolge a turni, dove puoi scegliere un'azione"},
+      {"id": 3, "titolo": "Attacco", "contenuto": "L'attacco base usa l'arma equipaggiata contro un nemico"},
+      {"id": 4, "titolo": "Difesa", "contenuto": "Difenderti riduce i danni subiti nel prossimo turno"},
+      {"id": 5, "titolo": "Oggetti", "contenuto": "Puoi usare pozioni o altri oggetti durante il combattimento"},
+      {"id": 6, "titolo": "Abilità", "contenuto": "Le abilità speciali dipendono dalla tua classe e consumano mana"}
+    ]
+  },
+  "inventario": {
+    "titolo": "Guida all'inventario",
+    "passi": [
+      {"id": 1, "titolo": "Raccogliere oggetti", "contenuto": "Usa 'raccogli [oggetto]' per aggiungere un oggetto al tuo inventario"},
+      {"id": 2, "titolo": "Equipaggiare", "contenuto": "Usa 'equipaggia [oggetto]' per indossare o impugnare un oggetto"},
+      {"id": 3, "titolo": "Usare oggetti", "contenuto": "Usa 'usa [oggetto]' per consumare o attivare un oggetto"},
+      {"id": 4, "titolo": "Esaminare", "contenuto": "Usa 'esamina [oggetto]' per ottenere dettagli su un oggetto"}
+    ]
+  },
+  "dialogo": {
+    "titolo": "Guida ai dialoghi",
+    "passi": [
+      {"id": 1, "titolo": "Parlare con NPC", "contenuto": "Usa 'parla [nome NPC]' per iniziare una conversazione"},
+      {"id": 2, "titolo": "Opzioni di dialogo", "contenuto": "Seleziona le opzioni numerate per rispondere durante le conversazioni"},
+      {"id": 3, "titolo": "Commercio", "contenuto": "Alcuni NPC offrono opzioni per comprare o vendere oggetti"},
+      {"id": 4, "titolo": "Missioni", "contenuto": "Parlando con gli NPC puoi ricevere missioni da completare"}
+    ]
+  }
+} 
