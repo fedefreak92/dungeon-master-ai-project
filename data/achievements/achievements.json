@@ -1,1 +1,99 @@
-
+[
+  {
+    "id": "primo_passo",
+    "nome": "Primo Passo",
+    "descrizione": "Muoviti per la prima volta",
+    "icona": "achievement_movimento.png",
+    "difficolta": "facile",
+    "punteggio": 5,
+    "condizione": {
+      "tipo": "movimento",
+      "valore": 1
+    }
+  },
+  {
+    "id": "primo_sangue",
+    "nome": "Primo Sangue",
+    "descrizione": "Vinci il tuo primo combattimento",
+    "icona": "achievement_combattimento.png",
+    "difficolta": "facile",
+    "punteggio": 10,
+    "condizione": {
+      "tipo": "combattimento_vittoria",
+      "valore": 1
+    }
+  },
+  {
+    "id": "collezionista",
+    "nome": "Collezionista",
+    "descrizione": "Raccogli 20 oggetti diversi",
+    "icona": "achievement_oggetti.png",
+    "difficolta": "media",
+    "punteggio": 20,
+    "condizione": {
+      "tipo": "oggetti_raccolti_unici",
+      "valore": 20
+    }
+  },
+  {
+    "id": "esploratore",
+    "nome": "Esploratore",
+    "descrizione": "Visita tutte le aree della mappa",
+    "icona": "achievement_mappa.png",
+    "difficolta": "difficile",
+    "punteggio": 50,
+    "condizione": {
+      "tipo": "aree_visitate",
+      "valore": "tutte"
+    }
+  },
+  {
+    "id": "maestro_armi",
+    "nome": "Maestro delle Armi",
+    "descrizione": "Equipaggia un'arma leggendaria",
+    "icona": "achievement_equipaggiamento.png",
+    "difficolta": "difficile",
+    "punteggio": 30,
+    "condizione": {
+      "tipo": "equipaggia_oggetto",
+      "rarita": "leggendario",
+      "categoria": "arma"
+    }
+  },
+  {
+    "id": "ricco_sfondato",
+    "nome": "Ricco Sfondato",
+    "descrizione": "Accumula 1000 monete d'oro",
+    "icona": "achievement_oro.png",
+    "difficolta": "media",
+    "punteggio": 25,
+    "condizione": {
+      "tipo": "monete",
+      "valore": 1000
+    }
+  },
+  {
+    "id": "invincibile",
+    "nome": "Invincibile",
+    "descrizione": "Vinci 10 combattimenti senza subire danni",
+    "icona": "achievement_difesa.png",
+    "difficolta": "difficile",
+    "punteggio": 40,
+    "condizione": {
+      "tipo": "combattimenti_senza_danni",
+      "valore": 10
+    }
+  },
+  {
+    "id": "diplomazia",
+    "nome": "Diplomatico",
+    "descrizione": "Completa una missione senza combattere",
+    "icona": "achievement_dialogo.png",
+    "difficolta": "media",
+    "punteggio": 20,
+    "condizione": {
+      "tipo": "missione_senza_combattimenti",
+      "valore": 1
+    }
+  }
+] 
