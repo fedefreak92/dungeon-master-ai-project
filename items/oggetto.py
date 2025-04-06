@@ -12,30 +12,37 @@ class Oggetto:
     def __repr__(self):
         return f"Oggetto(nome={self.nome}, tipo={self.tipo}, effetto={self.effetto}, valore={self.valore}, descrizione={self.descrizione})"
 
-    def usa(self, giocatore, gioco):
+    def usa(self, giocatore, gioco=None):
         if self.tipo == "cura":
-            giocatore.cura(self.effetto.get("cura", 0))
-            gioco.io.mostra_messaggio(f"Usi {self.nome} e recuperi {self.effetto.get('cura', 0)} HP.")
+            giocatore.cura(self.effetto.get("cura", 0), gioco)
+            if gioco:
+                gioco.io.mostra_messaggio(f"Usi {self.nome} e recuperi {self.effetto.get('cura', 0)} HP.")
             giocatore.rimuovi_item(self.nome)
         elif self.tipo == "cura_leggera":
-            giocatore.cura(self.effetto.get("cura_leggera", 5))
-            gioco.io.mostra_messaggio(f"Usi {self.nome} e recuperi {self.effetto.get('cura_leggera', 5)} HP.")
+            giocatore.cura(self.effetto.get("cura_leggera", 5), gioco)
+            if gioco:
+                gioco.io.mostra_messaggio(f"Usi {self.nome} e recuperi {self.effetto.get('cura_leggera', 5)} HP.")
             giocatore.rimuovi_item(self.nome)
         elif self.tipo == "cura_grave":
-            giocatore.cura(self.effetto.get("cura_grave", 15))
-            gioco.io.mostra_messaggio(f"Usi {self.nome} e recuperi {self.effetto.get('cura_grave', 15)} HP.")
+            giocatore.cura(self.effetto.get("cura_grave", 15), gioco)
+            if gioco:
+                gioco.io.mostra_messaggio(f"Usi {self.nome} e recuperi {self.effetto.get('cura_grave', 15)} HP.")
             giocatore.rimuovi_item(self.nome)
         elif self.tipo == "arma":
             self.equipaggia(giocatore, gioco)
         elif self.tipo == "armatura":
             self.equipaggia(giocatore, gioco)
         elif self.tipo == "chiave":
-            gioco.io.mostra_messaggio(f"Usi la chiave {self.nome}, ma non succede nulla... per ora.")
+            if gioco:
+                gioco.io.mostra_messaggio(f"Usi la chiave {self.nome}, ma non succede nulla... per ora.")
         else:
-            gioco.io.mostra_messaggio(f"L'oggetto {self.nome} non può essere usato direttamente.")
+            if gioco:
+                gioco.io.mostra_messaggio(f"L'oggetto {self.nome} non può essere usato direttamente.")
+            return False
+        return True
 
     def vendi(self, giocatore, gioco):
-        giocatore.aggiungi_oro(self.valore)
+        giocatore.aggiungi_oro(self.valore, gioco)
         giocatore.rimuovi_item(self.nome)
         gioco.io.mostra_messaggio(f"Hai venduto {self.nome} per {self.valore} monete d'oro")
     
