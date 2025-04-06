@@ -355,6 +355,52 @@ class GestitoreMappe:
             
         return info
     
+    def to_dict(self):
+        """
+        Converte l'intero stato del gestore mappe in un dizionario.
+        
+        Returns:
+            dict: Rappresentazione del gestore mappe in formato dizionario
+        """
+        mappe_data = {}
+        for nome_mappa, mappa in self.mappe.items():
+            mappe_data[nome_mappa] = mappa.to_dict()
+        
+        return {
+            "mappe": mappe_data,
+            "mappa_attuale": self.mappa_attuale.nome if self.mappa_attuale else None
+        }
+
+    def from_dict(self, data):
+        """
+        Carica lo stato del gestore mappe da un dizionario.
+        
+        Args:
+            data (dict): Dizionario contenente lo stato del gestore mappe
+            
+        Returns:
+            bool: True se il caricamento è avvenuto con successo, False altrimenti
+        """
+        try:
+            from world.mappa import Mappa
+            
+            # Carica le mappe dal dizionario
+            mappe_data = data.get("mappe", {})
+            self.mappe = {}
+            
+            for nome_mappa, mappa_dict in mappe_data.items():
+                self.mappe[nome_mappa] = Mappa.from_dict(mappa_dict)
+            
+            # Imposta la mappa attuale
+            mappa_attuale_nome = data.get("mappa_attuale")
+            if mappa_attuale_nome and mappa_attuale_nome in self.mappe:
+                self.mappa_attuale = self.mappe[mappa_attuale_nome]
+            
+            return True
+        except Exception as e:
+            print(f"Errore durante il caricamento delle mappe: {e}")
+            return False
+    
     def salva(self, percorso_file="mappe_salvataggio.json"):
         """
         Salva lo stato completo di tutte le mappe e relativi oggetti interattivi.
