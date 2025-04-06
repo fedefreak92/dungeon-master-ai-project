@@ -1,4 +1,4 @@
-from states.base_state import BaseState
+from states.base_state import BaseGameState
 from util.funzioni_utili import avanti, mostra_inventario, mostra_statistiche
 from states.mercato import MercatoState
 from states.dialogo import DialogoState
@@ -9,22 +9,31 @@ from items.oggetto import Oggetto
 from states.prova_abilita import ProvaAbilitaState
 from world.mappa import Mappa
 from world.gestore_mappe import GestitoreMappe
+from util.data_manager import get_data_manager
+import logging
 
 
-class TavernaState(BaseState):
-    def __init__(self):
+class TavernaState(BaseGameState):
+    """Classe che rappresenta lo stato della taverna"""
+    
+    def __init__(self, game):
+        super().__init__(game)
+        self.nome_stato = "taverna"
         self.ultima_scelta = None  # Per ricordare l'ultima scelta fatta
         self.prima_visita = True  # Flag per la prima visita
         self.fase = "menu_principale"  # Fase corrente per operazioni asincrone
         self.ultimo_input = None  # Memorizza l'ultimo input dell'utente
         self.dati_contestuali = {}  # Per memorizzare dati tra più fasi
         
-        # Dizionario degli NPG presenti nella taverna
+        # Carica gli NPC specifici della taverna
         self.npg_presenti = {
             "Durnan": NPG("Durnan"),
             "Elminster": NPG("Elminster"),
             "Mirt": NPG("Mirt")
         }
+        self.nome_npg_attivo = None
+        self.stato_conversazione = "inizio"
+        self.stato_precedente = None
         
         # Oggetti interattivi nella taverna
         self.oggetti_interattivi = {
@@ -80,6 +89,15 @@ class TavernaState(BaseState):
             "ovest": (-1, 0)
         }
 
+        # Inizializza menu e comandi
+        self._init_commands()
+
+    def _init_commands(self):
+        """Inizializza i comandi e le loro mappature per questo stato"""
+        # Questo è un metodo temporaneo che può essere implementato completamente in futuro
+        # Per ora è vuoto per consentire l'esecuzione del gioco
+        pass
+
     def esegui(self, gioco):
         if self.prima_visita:
             gioco.io.mostra_messaggio(f"Benvenuto {gioco.giocatore.nome} sei appena arrivato nella Taverna Il Portale Spalancato a Waterdeep. Sei di ritrono da un lungo viaggio che ti ha permesso di ottenere molti tesori ma anche molte cicatrici. Entri con passo svelto e ti dirigi verso la tua prossima avventura")
@@ -113,6 +131,8 @@ class TavernaState(BaseState):
             self._interagisci_ambiente(gioco)
         elif self.fase == "salva_partita":
             self._salva_partita(gioco)
+        elif self.fase == "scegli_nemico":
+            self._scegli_nemico(gioco)
         else:
             # Fase non riconosciuta, torna al menu principale
             self.fase = "menu_principale"
@@ -121,7 +141,7 @@ class TavernaState(BaseState):
     def _mostra_menu_principale(self, gioco):
         gioco.io.mostra_messaggio("\nTi trovi nella taverna. Cosa vuoi fare?")
         gioco.io.mostra_messaggio("1. Parla con qualcuno")
-        gioco.io.mostra_messaggio("2. Vai al mercato")        
+        gioco.io.mostra_messaggio("2. Viaggia verso un'altra zona")        
         gioco.io.mostra_messaggio("3. Mostra statistiche")
         gioco.io.mostra_messaggio("4. Combatti con un nemico")
         gioco.io.mostra_messaggio("5. Sfida un NPC")
@@ -152,18 +172,17 @@ class TavernaState(BaseState):
             self.fase = "parla_npg"
             self.dati_contestuali.clear()
         elif scelta == "2":
-            gioco.push_stato(MercatoState())  # Usiamo push_stato per il mercato
+            from states.scelta_mappa_state import SceltaMappaState
+            gioco.push_stato(SceltaMappaState(gioco))
             self.fase = "menu_principale"
         elif scelta == "3":
             mostra_statistiche(gioco.giocatore, gioco)
             avanti(gioco)
             self.fase = "menu_principale"
         elif scelta == "4":
-            from states.combattimento import CombattimentoState
-            from entities.nemico import Nemico
-            nemico = Nemico("Goblin", 10, 3)
-            gioco.push_stato(CombattimentoState(nemico=nemico))  # Usiamo push_stato per il combattimento
-            self.fase = "menu_principale"
+            # Modificato per permettere la scelta del nemico
+            self.fase = "scegli_nemico"
+            self.dati_contestuali.clear()
         elif scelta == "5":
             self.fase = "combatti_npg"
             self.dati_contestuali.clear()
@@ -196,7 +215,7 @@ class TavernaState(BaseState):
         # Mappatura comandi di testo ai numeri
         if any(parola in cmd for parola in ["parla", "dialoga", "conversa"]):
             return "1"
-        elif any(parola in cmd for parola in ["mercato", "compra", "negozio"]):
+        elif any(parola in cmd for parola in ["viaggia", "vai", "zona", "cambio", "mappa"]):
             return "2"
         elif any(parola in cmd for parola in ["statistiche", "stat", "status"]):
             return "3"
@@ -551,31 +570,59 @@ class TavernaState(BaseState):
         return data
     
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data, game=None):
         """
         Crea un'istanza di TavernaState da un dizionario.
         
         Args:
             data (dict): Dizionario con i dati dello stato
+            game: Istanza del gioco (opzionale)
             
         Returns:
             TavernaState: Nuova istanza di TavernaState
         """
-        state = cls()
+        # Creiamo un oggetto senza chiamare __init__ per evitare l'errore del parametro mancante
+        state = object.__new__(cls)
         
-        # Ripristina attributi
+        # Inizializziamo manualmente gli attributi basilari
+        state.nome_stato = "taverna"
+        state.ultima_scelta = None
+        state.prima_visita = False  # Non è la prima visita durante un caricamento
+        state.fase = "menu_principale"
+        state.ultimo_input = None
+        state.dati_contestuali = {}
+        state.game = game
+        
+        # Ricrea gli NPG dai nomi
+        state.npg_presenti = {}
+        npg_nomi = data.get("npg_nomi", ["Durnan", "Elminster", "Mirt"])
+        for nome in npg_nomi:
+            from entities.npg import NPG
+            state.npg_presenti[nome] = NPG(nome)
+        
+        # Inizializza gli oggetti interattivi vuoti (verranno caricati dal sistema JSON)
+        state.oggetti_interattivi = {}
+        
+        # Carica altri attributi dal dizionario se presenti
         state.fase = data.get("fase", "menu_principale")
         state.ultimo_input = data.get("ultimo_input")
         state.ultima_scelta = data.get("ultima_scelta")
+        state.nome_npg_attivo = None
+        state.stato_conversazione = "inizio"
+        state.stato_precedente = None
+        state.mostra_mappa = False
         
-        # Ricrea gli NPG dai nomi
-        npg_nomi = data.get("npg_nomi", ["Durnan", "Elminster", "Mirt"])
-        for nome in npg_nomi:
-            if nome not in state.npg_presenti:
-                from entities.npg import NPG
-                state.npg_presenti[nome] = NPG(nome)
+        # Direzioni di movimento
+        state.direzioni = {
+            "nord": (0, -1),
+            "sud": (0, 1),
+            "est": (1, 0),
+            "ovest": (-1, 0)
+        }
         
-        # Gli oggetti_interattivi vengono generati dal costruttore
+        # Inizializza menu e comandi
+        if hasattr(state, '_init_commands'):
+            state._init_commands()
         
         return state
         
@@ -607,3 +654,145 @@ class TavernaState(BaseState):
             state (dict): Stato dell'oggetto da ripristinare
         """
         self.__dict__.update(state)
+
+    def _scegli_nemico(self, gioco):
+        """
+        Permette all'utente di scegliere un nemico con cui combattere.
+        """
+        from entities.nemico import Nemico
+        from states.combattimento import CombattimentoState
+        
+        # Verifica lo stato della scelta
+        if "fase_scelta" not in self.dati_contestuali:
+            # Prima fase: scelta della modalità (casuale o selezione)
+            gioco.io.mostra_messaggio("\nCome vuoi scegliere il nemico?")
+            gioco.io.mostra_messaggio("1. Nemico casuale")
+            gioco.io.mostra_messaggio("2. Nemico casuale facile")
+            gioco.io.mostra_messaggio("3. Nemico casuale medio")
+            gioco.io.mostra_messaggio("4. Nemico casuale difficile")
+            gioco.io.mostra_messaggio("5. Scegli un tipo specifico")
+            gioco.io.mostra_messaggio("6. Torna al menu principale")
+            
+            self.dati_contestuali["fase_scelta"] = "modalita"
+            gioco.io.richiedi_input("Scelta: ")
+            return
+            
+        elif self.dati_contestuali["fase_scelta"] == "modalita":
+            # Elabora la scelta della modalità
+            scelta = gioco.io.ultimo_input
+            
+            if scelta == "1":
+                # Nemico casuale di qualsiasi difficoltà
+                nemico = Nemico.crea_casuale()
+                gioco.io.mostra_messaggio(f"\nStai per affrontare un {nemico.nome}!")
+                avanti(gioco)
+                gioco.push_stato(CombattimentoState(nemico=nemico))
+                self.fase = "menu_principale"
+                self.dati_contestuali.clear()
+                return
+                
+            elif scelta == "2":
+                # Nemico casuale facile
+                nemico = Nemico.crea_casuale("facile")
+                gioco.io.mostra_messaggio(f"\nStai per affrontare un {nemico.nome} (facile)!")
+                avanti(gioco)
+                gioco.push_stato(CombattimentoState(nemico=nemico))
+                self.fase = "menu_principale"
+                self.dati_contestuali.clear()
+                return
+                
+            elif scelta == "3":
+                # Nemico casuale medio
+                nemico = Nemico.crea_casuale("medio")
+                gioco.io.mostra_messaggio(f"\nStai per affrontare un {nemico.nome} (medio)!")
+                avanti(gioco)
+                gioco.push_stato(CombattimentoState(nemico=nemico))
+                self.fase = "menu_principale"
+                self.dati_contestuali.clear()
+                return
+                
+            elif scelta == "4":
+                # Nemico casuale difficile
+                nemico = Nemico.crea_casuale("difficile")
+                gioco.io.mostra_messaggio(f"\nStai per affrontare un {nemico.nome} (difficile)!")
+                avanti(gioco)
+                gioco.push_stato(CombattimentoState(nemico=nemico))
+                self.fase = "menu_principale"
+                self.dati_contestuali.clear()
+                return
+                
+            elif scelta == "5":
+                # Passa alla fase di selezione specifica
+                tipi_mostri = Nemico.ottieni_tipi_mostri()
+                
+                if not tipi_mostri:
+                    gioco.io.mostra_messaggio("\nNon ci sono tipi di mostri disponibili.")
+                    self.fase = "menu_principale"
+                    self.dati_contestuali.clear()
+                    return
+                
+                gioco.io.mostra_messaggio("\nScegli un tipo di mostro:")
+                for i, tipo in enumerate(tipi_mostri, 1):
+                    gioco.io.mostra_messaggio(f"{i}. {tipo.replace('_', ' ').title()}")
+                gioco.io.mostra_messaggio(f"{len(tipi_mostri) + 1}. Torna indietro")
+                
+                self.dati_contestuali["fase_scelta"] = "tipo_specifico"
+                self.dati_contestuali["tipi_mostri"] = tipi_mostri
+                gioco.io.richiedi_input("Scelta: ")
+                return
+                
+            elif scelta == "6":
+                # Torna al menu principale
+                self.fase = "menu_principale"
+                self.dati_contestuali.clear()
+                return
+                
+            else:
+                gioco.io.mostra_messaggio("Scelta non valida.")
+                self.dati_contestuali.clear()
+                self.fase = "scegli_nemico"
+                return
+                
+        elif self.dati_contestuali["fase_scelta"] == "tipo_specifico":
+            # Elabora la scelta del tipo specifico di mostro
+            try:
+                scelta = int(gioco.io.ultimo_input)
+                tipi_mostri = self.dati_contestuali.get("tipi_mostri", [])
+                
+                if 1 <= scelta <= len(tipi_mostri):
+                    tipo_mostro = tipi_mostri[scelta - 1]
+                    nemico = Nemico(nome="", tipo_mostro=tipo_mostro)
+                    
+                    # Mostra informazioni sul mostro
+                    gioco.io.mostra_messaggio(f"\nHai scelto di affrontare un {nemico.nome}!")
+                    gioco.io.mostra_messaggio(nemico.descrizione)
+                    gioco.io.mostra_messaggio(f"HP: {nemico.hp}/{nemico.hp_max}, Forza: {nemico.forza_base}")
+                    
+                    # Avvia il combattimento
+                    avanti(gioco)
+                    gioco.push_stato(CombattimentoState(nemico=nemico))
+                    self.fase = "menu_principale"
+                    self.dati_contestuali.clear()
+                    return
+                    
+                elif scelta == len(tipi_mostri) + 1:
+                    # Torna alla scelta della modalità
+                    self.dati_contestuali.clear()
+                    self.fase = "scegli_nemico"
+                    return
+                    
+                else:
+                    gioco.io.mostra_messaggio("Scelta non valida.")
+                    # Rimane nella stessa fase
+                    gioco.io.richiedi_input("Scelta: ")
+                    return
+                    
+            except ValueError:
+                gioco.io.mostra_messaggio("Devi inserire un numero.")
+                # Rimane nella stessa fase
+                gioco.io.richiedi_input("Scelta: ")
+                return
+        
+        # Se si raggiunge questo punto, torna al menu principale
+        self.fase = "menu_principale"
+        self.dati_contestuali.clear()

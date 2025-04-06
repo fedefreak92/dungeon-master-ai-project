@@ -1,4 +1,4 @@
-from states.base_state import BaseState
+from states.base_state import BaseGameState
 from util.funzioni_utili import avanti
 from entities.npg import NPG
 from states.dialogo import DialogoState
@@ -10,21 +10,33 @@ from states.prova_abilita import ProvaAbilitaState
 from world.mappa import Mappa
 from world.gestore_mappe import GestitoreMappe
 from core.io_interface import GameIO  # Importazione corretta per l'interfaccia IO
+from util.data_manager import get_data_manager
+import logging
 
 
-class MercatoState(BaseState):
-    def __init__(self):
-        # Attributi per gestione asincrona
-        self.fase = "menu_principale"
-        self.ultimo_input = None
-        self.dati_contestuali = {}  # Per memorizzare dati tra più fasi
-        
-        # Creiamo NPG specifici del mercato
+class MercatoState(BaseGameState):
+    """Classe che rappresenta lo stato del mercato"""
+    
+    def __init__(self, game):
+        super().__init__(game)
+        self.nome_stato = "mercato"
+        # Carica gli NPC specifici del mercato
         self.npg_presenti = {
             "Araldo": NPG("Araldo"),
             "Violetta": NPG("Violetta"),
             "Gundren": NPG("Gundren")
         }
+        self.nome_npg_attivo = None
+        self.stato_conversazione = "inizio"
+        self.stato_precedente = None
+        
+        # Inizializza menu e comandi
+        self._init_commands()
+        
+        # Attributi per gestione asincrona
+        self.fase = "menu_principale"
+        self.ultimo_input = None
+        self.dati_contestuali = {}  # Per memorizzare dati tra più fasi
         
         # Aggiungiamo gli oggetti interattivi del mercato
         self.oggetti_interattivi = {
@@ -205,7 +217,7 @@ class MercatoState(BaseState):
         gioco.io.mostra_messaggio("8. Visualizza mappa")
         gioco.io.mostra_messaggio("9. Muoviti sulla mappa")
         gioco.io.mostra_messaggio("10. Interagisci con l'ambiente")
-        gioco.io.mostra_messaggio("11. Torna alla taverna")
+        gioco.io.mostra_messaggio("11. Viaggia verso un'altra zona")
         
         scelta_input = gioco.io.richiedi_input("\nCosa vuoi fare? ")
         self.ultimo_input = scelta_input
@@ -239,9 +251,8 @@ class MercatoState(BaseState):
         elif scelta == "10":
             self.fase = "interagisci_ambiente"
         elif scelta == "11":
-            if gioco.stato_corrente():
-                gioco.pop_stato()  # Torna alla taverna
-                return
+            from states.scelta_mappa_state import SceltaMappaState
+            gioco.push_stato(SceltaMappaState(gioco))
         else:
             gioco.io.mostra_messaggio(f"Non capisco cosa vuoi fare con '{scelta_input}'.")
             avanti(gioco)
@@ -275,7 +286,7 @@ class MercatoState(BaseState):
             return "9"
         elif any(x in cmd for x in ["interagisci", "ambiente", "interazione"]):
             return "10"
-        elif any(x in cmd for x in ["torna", "taverna", "esci"]):
+        elif any(x in cmd for x in ["viaggia", "zona", "cambio", "mappa"]):
             return "11"
         else:
             return cmd  # ritorna il comando originale se non corrisponde a nessuna azione
@@ -283,8 +294,8 @@ class MercatoState(BaseState):
     def _compra_pozione(self, gioco):
         if gioco.giocatore.oro >= 5:
             gioco.giocatore.oro -= 5
-            gioco.giocatore.aggiungi_item("Pozione")
-            gioco.io.mostra_messaggio("Hai comprato una pozione!")
+            gioco.giocatore.aggiungi_item("Pozione di cura")
+            gioco.io.mostra_messaggio("Hai comprato una pozione di cura!")
         else:
             gioco.io.mostra_messaggio("Non hai abbastanza oro!")
         
@@ -594,6 +605,12 @@ class MercatoState(BaseState):
         # Dopo l'interazione, torneremo al menu principale
         self.fase = "menu_principale"
     
+    def _init_commands(self):
+        """Inizializza i comandi e le loro mappature per questo stato"""
+        # Questo è un metodo temporaneo che può essere implementato completamente in futuro
+        # Per ora è vuoto per consentire l'esecuzione del gioco
+        pass
+        
     def to_dict(self):
         """
         Converte lo stato del mercato in un dizionario per la serializzazione.
@@ -614,23 +631,49 @@ class MercatoState(BaseState):
         return data
     
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data, game=None):
         """
         Crea un'istanza di MercatoState da un dizionario.
         
         Args:
             data (dict): Dizionario con i dati dello stato
+            game: Istanza del gioco (opzionale)
             
         Returns:
             MercatoState: Nuova istanza di MercatoState
         """
-        state = cls()
+        # Otteniamo innanzitutto uno stato di base attraverso la classe padre
+        state = super().from_dict(data, game)
         
-        # Ripristina attributi
+        # Inizializziamo manualmente gli attributi specifici di MercatoState
+        state.nome_stato = "mercato"
+        state.game = game
         state.fase = data.get("fase", "menu_principale")
         state.ultimo_input = data.get("ultimo_input")
+        state.dati_contestuali = {}
+        state.prima_visita_completata = False
         
-        # I mercanti, scorte e oggetti_interattivi vengono generati dal costruttore
+        # Inizializza gli NPC del mercato
+        state.npg_presenti = {
+            "Araldo": NPG("Araldo"),
+            "Violetta": NPG("Violetta"),
+            "Gundren": NPG("Gundren")
+        }
+        state.nome_npg_attivo = None
+        state.stato_conversazione = "inizio"
+        state.stato_precedente = None
+        
+        # Inizializza gli oggetti interattivi vuoti (verranno caricati dal sistema JSON)
+        state.oggetti_interattivi = {}
+        state.mostra_mappa = False
+        
+        # Direzioni di movimento
+        state.direzioni = {
+            "nord": (0, -1),
+            "sud": (0, 1),
+            "est": (1, 0),
+            "ovest": (-1, 0)
+        }
         
         return state
         
