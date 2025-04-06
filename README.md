@@ -3,6 +3,8 @@
 
 This repository contains the **backend core** of a modular role-playing game (RPG) engine, designed in Python using a clean object-oriented architecture and a stack-based finite state machine (FSM). The project aims to evolve into an AI-driven, narratively rich RPG system, where a virtual Dungeon Master powered by GPT can enhance player immersion.
 
+![Descrizione immagine](Image.png)
+
 ## 🏗️ Architecture Overview
 
 The project is organized into well-defined modules:
