@@ -1,0 +1,84 @@
+{
+  "name": "pixi.js",
+  "version": "7.4.3",
+  "description": "PixiJS without the CanvasRenderer fallback, modern browsers only",
+  "author": "Mat Groves",
+  "contributors": [
+    "Ivan Popelyshev <ivan.popelyshev@gmail.com>",
+    "Matt Karl <matt@mattkarl.com>",
+    "Chad Engler <chad@pantherdev.com>",
+    "Richard Davey <rdavey@gmail.com>"
+  ],
+  "standalone": true,
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "bundle": "dist/pixi.js",
+  "bundleModule": "dist/pixi.mjs",
+  "bundleOutput": {
+    "name": "PIXI"
+  },
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/index.d.ts",
+        "default": "./lib/index.mjs"
+      },
+      "require": {
+        "types": "./lib/index.d.ts",
+        "default": "./lib/index.js"
+      }
+    }
+  },
+  "homepage": "http://www.pixijs.com/",
+  "bugs": "https://github.com/pixijs/pixijs/issues",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pixijs/pixijs.git"
+  },
+  "scripts": {
+    "test": "floss --path test"
+  },
+  "files": [
+    "lib",
+    "dist",
+    "*.d.ts"
+  ],
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/pixijs"
+  },
+  "dependencies": {
+    "@pixi/accessibility": "7.4.3",
+    "@pixi/app": "7.4.3",
+    "@pixi/assets": "7.4.3",
+    "@pixi/compressed-textures": "7.4.3",
+    "@pixi/core": "7.4.3",
+    "@pixi/display": "7.4.3",
+    "@pixi/events": "7.4.3",
+    "@pixi/extensions": "7.4.3",
+    "@pixi/extract": "7.4.3",
+    "@pixi/filter-alpha": "7.4.3",
+    "@pixi/filter-blur": "7.4.3",
+    "@pixi/filter-color-matrix": "7.4.3",
+    "@pixi/filter-displacement": "7.4.3",
+    "@pixi/filter-fxaa": "7.4.3",
+    "@pixi/filter-noise": "7.4.3",
+    "@pixi/graphics": "7.4.3",
+    "@pixi/mesh": "7.4.3",
+    "@pixi/mesh-extras": "7.4.3",
+    "@pixi/mixin-cache-as-bitmap": "7.4.3",
+    "@pixi/mixin-get-child-by-name": "7.4.3",
+    "@pixi/mixin-get-global-position": "7.4.3",
+    "@pixi/particle-container": "7.4.3",
+    "@pixi/prepare": "7.4.3",
+    "@pixi/sprite": "7.4.3",
+    "@pixi/sprite-animated": "7.4.3",
+    "@pixi/sprite-tiling": "7.4.3",
+    "@pixi/spritesheet": "7.4.3",
+    "@pixi/text": "7.4.3",
+    "@pixi/text-bitmap": "7.4.3",
+    "@pixi/text-html": "7.4.3"
+  }
+}

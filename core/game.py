@@ -79,37 +79,55 @@ class Game:
 
     def push_stato(self, nuovo_stato):
         """
-        Inserisce un nuovo stato sopra quello corrente
+        Inserisce un nuovo stato sopra quello corrente.
+        Previene la duplicazione di stati dello stesso tipo.
         
         Args:
             nuovo_stato: Il nuovo stato da aggiungere
+            
+        Returns:
+            bool: True se lo stato è stato aggiunto, False altrimenti
         """
         try:
             # Verifica che lo stato non sia None
             if nuovo_stato is None:
                 self.io.mostra_messaggio("Errore: tentativo di aggiungere uno stato nullo.")
-                return
+                return False
+            
+            # Verifica che non si stia aggiungendo uno stato dello stesso tipo di quello corrente
+            stato_corrente = self.stato_corrente()
+            if stato_corrente and type(stato_corrente) == type(nuovo_stato):
+                self.io.mostra_messaggio(f"Attenzione: si sta tentando di aggiungere uno stato {type(nuovo_stato).__name__} identico a quello già presente.")
+                return False
             
             # Imposta il contesto di gioco nello stato prima di usarlo
             if hasattr(nuovo_stato, 'set_game_context'):
                 nuovo_stato.set_game_context(self)
                 
-            if self.stato_corrente():
-                self.stato_corrente().pausa(self)  # Mette in pausa lo stato corrente
+            if stato_corrente:
+                stato_corrente.pausa(self)  # Mette in pausa lo stato corrente
             self.stato_stack.append(nuovo_stato)
             nuovo_stato.entra(self)
+            
+            # Log debug
+            self.io.mostra_messaggio(f"Stato {type(nuovo_stato).__name__} aggiunto. Stack: {[type(s).__name__ for s in self.stato_stack]}")
+            return True
         except Exception as e:
             self.io.mostra_messaggio(f"Errore durante il push dello stato: {e}")
             self.attivo = False
+            return False
 
     def pop_stato(self):
         """
-        Rimuove lo stato corrente e torna al precedente
+        Rimuove lo stato corrente e torna al precedente.
+        
+        Returns:
+            bool: True se lo stato è stato rimosso con successo, False altrimenti
         """
         try:
             if not self.stato_stack:
                 self.io.mostra_messaggio("Nessuno stato da rimuovere.")
-                return
+                return False
                 
             stato_corrente = self.stato_stack[-1]
             if stato_corrente is None:
@@ -118,8 +136,10 @@ class Game:
                 self.stato_stack.pop()
             else:
                 # Procedi normalmente
+                nome_stato = type(stato_corrente).__name__
                 stato_corrente.esci(self)
                 self.stato_stack.pop()
+                self.io.mostra_messaggio(f"Stato {nome_stato} rimosso dallo stack.")
                 
             # Riprende lo stato precedente se esiste
             if self.stato_corrente():
@@ -128,6 +148,7 @@ class Game:
                     if hasattr(self.stato_corrente(), 'set_game_context'):
                         self.stato_corrente().set_game_context(self)
                     self.stato_corrente().riprendi(self)
+                    self.io.mostra_messaggio(f"Ritorno allo stato: {type(self.stato_corrente()).__name__}")
                 else:
                     # Rimuovi anche questo stato se è None
                     self.io.mostra_messaggio("Stato precedente non valido, verrà rimosso.")
@@ -135,7 +156,12 @@ class Game:
             
             # Se non ci sono più stati, termina il gioco
             if not self.stato_stack:
+                self.io.mostra_messaggio("Tutti gli stati sono stati rimossi. Il gioco terminerà.")
                 self.attivo = False  # Nessuno stato rimasto
+                
+            # Log debug dello stack attuale
+            self.io.mostra_messaggio(f"Stack degli stati: {[type(s).__name__ for s in self.stato_stack]}")
+            return True
         except Exception as e:
             self.io.mostra_messaggio(f"Errore durante il pop dello stato: {e}")
             # In caso di errore critico, rimuovi lo stato comunque
@@ -143,6 +169,7 @@ class Game:
                 self.stato_stack.pop()
             if not self.stato_stack:
                 self.attivo = False
+            return False
 
     def cambia_stato(self, nuovo_stato):
         """
@@ -602,3 +629,40 @@ class Game:
             logging.getLogger("gioco_rpg").error(traceback.format_exc())
             self.io.mostra_messaggio(f"Errore durante il caricamento: {e}")
             return False
+
+    def debug_stack_stati(self):
+        """
+        Fornisce una vista dettagliata dello stack degli stati per il debug
+        
+        Returns:
+            dict: Dizionario con informazioni sullo stack
+        """
+        try:
+            stati_info = []
+            for i, stato in enumerate(self.stato_stack):
+                tipo_stato = type(stato).__name__
+                # Aggiungi attributi specifici se disponibili
+                info_aggiuntive = {}
+                if hasattr(stato, 'nome_stato'):
+                    info_aggiuntive['nome_stato'] = stato.nome_stato
+                if hasattr(stato, 'fase'):
+                    info_aggiuntive['fase'] = stato.fase
+                stati_info.append({
+                    'indice': i,
+                    'tipo': tipo_stato,
+                    'info': info_aggiuntive
+                })
+                
+            risultato = {
+                'stato_corrente': type(self.stato_corrente()).__name__ if self.stato_corrente() else "Nessuno",
+                'numero_stati': len(self.stato_stack),
+                'stati': stati_info,
+                'attivo': self.attivo
+            }
+            
+            return risultato
+        except Exception as e:
+            return {
+                'errore': f"Errore durante la generazione del debug: {str(e)}",
+                'numero_stati': len(self.stato_stack) if hasattr(self, 'stato_stack') else 0
+            }

@@ -28,19 +28,37 @@ class DataManager:
     
     def _initialize(self):
         """Inizializza le directory per i dati."""
+        logger.info(f"Inizializzazione DataManager - Directory base: {DATA_DIR.absolute()}")
+        logger.info(f"Directory base esiste: {DATA_DIR.exists()}")
+        
         self._data_paths = {
             "classi": DATA_DIR / "classes",
             "tutorials": DATA_DIR / "tutorials",
             "achievements": DATA_DIR / "achievements",
             "oggetti": DATA_DIR / "items",
             "npc": DATA_DIR / "npc",
-            "assets_info": DATA_DIR / "assets_info"
+            "assets_info": DATA_DIR / "assets_info",
+            "mostri": DATA_DIR / "monsters",
+            "mappe": DATA_DIR / "mappe"
         }
         
-        # Assicurati che tutte le directory esistano
-        for path in self._data_paths.values():
-            if not path.exists():
+        # Debug di tutti i percorsi di dati
+        logger.info("Elenco percorsi dati:")
+        for data_type, path in self._data_paths.items():
+            exists = path.exists()
+            logger.info(f"- {data_type}: {path.absolute()} (esiste: {exists})")
+            if exists:
+                files = list(path.glob("*.json"))
+                logger.info(f"  File trovati: {[f.name for f in files]}")
+            else:
                 logger.warning(f"Directory dati non trovata: {path}")
+                
+                # Prova a creare la directory se non esiste
+                try:
+                    path.mkdir(parents=True, exist_ok=True)
+                    logger.info(f"Directory {path} creata")
+                except Exception as e:
+                    logger.error(f"Impossibile creare directory {path}: {str(e)}")
     
     def load_data(self, data_type, file_name=None, reload=False):
         """
@@ -67,22 +85,48 @@ class DataManager:
         
         # Se i dati sono già in cache e non è richiesto il ricaricamento, restituiscili
         if not reload and cache_key in self._data_cache:
+            logger.info(f"Ritorno dati dalla cache per {cache_key}")
             return self._data_cache[cache_key]
         
         # Percorso completo del file
         file_path = self._data_paths[data_type] / file_name
+        logger.info(f"Percorso completo per {data_type}/{file_name}: {file_path.absolute()}")
+        logger.info(f"File esiste: {file_path.exists()}")
         
         try:
             if not file_path.exists():
                 logger.error(f"File non trovato: {file_path}")
+                logger.info(f"Controllo directory {self._data_paths[data_type]}: esiste={self._data_paths[data_type].exists()}")
+                if self._data_paths[data_type].exists():
+                    logger.info(f"Contenuto directory {self._data_paths[data_type]}: {list(self._data_paths[data_type].glob('*.json'))}")
                 return {}
             
+            logger.info(f"Apertura file: {file_path}")
             with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                self._data_cache[cache_key] = data
-                return data
+                content = f.read()
+                logger.info(f"Letti {len(content)} byte da {file_path}")
+                
+                # Log dei primi 100 caratteri per debug
+                if len(content) > 0:
+                    logger.info(f"Primi 100 caratteri: {content[:100].replace(chr(10), '\\n')}")
+                else:
+                    logger.warning(f"File {file_path} è vuoto")
+                    return {}
+                    
+                try:
+                    data = json.loads(content)
+                    logger.info(f"JSON caricato con successo: tipo={type(data)}, lunghezza={len(data) if isinstance(data, (dict, list)) else 'N/A'}")
+                    self._data_cache[cache_key] = data
+                    return data
+                except json.JSONDecodeError as e:
+                    logger.error(f"Errore nel parsing JSON di {file_path}: {str(e)}")
+                    logger.error(f"Posizione errore: linea {e.lineno}, colonna {e.colno}")
+                    logger.error(f"Contenuto problematico: {content[max(0, e.pos-20):min(len(content), e.pos+20)]}")
+                    return {}
         except Exception as e:
             logger.error(f"Errore nel caricamento del file {file_path}: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return {}
     
     def get_all_data_files(self, data_type):
@@ -107,7 +151,75 @@ class DataManager:
     
     def get_classes(self):
         """Ottieni informazioni sulle classi di personaggio."""
-        return self.load_data("classi")
+        logger.info("Caricamento classi da data/classes/classes.json")
+        logger.info(f"Directory corrente: {os.getcwd()}")
+        
+        # Prima prova a caricare dalla cache o con il metodo standard
+        classi = self.load_data("classi", "classes.json", reload=True)  # Forza il reload
+        logger.info(f"Risultato load_data: {classi if classi else 'vuoto'}")
+        
+        # Se non ci sono classi o è vuoto, prova a caricare direttamente dal file
+        if not classi or len(classi) == 0:
+            logger.warning("Classi non trovate, provo percorsi alternativi")
+            
+            # Elenco di percorsi possibili per il file classes.json
+            possible_paths = [
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "classes", "classes.json"),  # ../data/classes/classes.json
+                os.path.join("data", "classes", "classes.json"),  # data/classes/classes.json relativo alla directory di lavoro
+                os.path.join(".", "data", "classes", "classes.json"),  # ./data/classes/classes.json
+                # Prova anche la directory 'classi' (alternativa italiana a 'classes')
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "classi", "classes.json"),  # ../data/classi/classes.json
+                os.path.join("data", "classi", "classes.json"),  # data/classi/classes.json
+                os.path.join(".", "data", "classi", "classes.json"),  # ./data/classi/classes.json
+                # Prova con nomi file alternativi
+                os.path.join("data", "classi", "classi.json"),  # data/classi/classi.json
+                os.path.join("data", "classes", "classi.json")   # data/classes/classi.json
+            ]
+            
+            # Log di tutti i possibili percorsi
+            for idx, path in enumerate(possible_paths):
+                abs_path = os.path.abspath(path)
+                exists = os.path.exists(abs_path)
+                logger.info(f"Path {idx}: {abs_path} - Esiste: {exists}")
+            
+            for file_path in possible_paths:
+                try:
+                    abs_path = os.path.abspath(file_path)
+                    if os.path.exists(abs_path):
+                        logger.info(f"Trovato file classi in: {abs_path}")
+                        with open(abs_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            logger.info(f"Contenuto file (primi 100 caratteri): {content[:100]}")
+                            classi = json.loads(content)
+                            logger.info(f"Classi caricate direttamente: {list(classi.keys())}")
+                            
+                            # Aggiungi alla cache
+                            self._data_cache["classi/classes.json"] = classi
+                            
+                            # Interrompi dopo aver trovato un file valido
+                            break
+                    else:
+                        logger.debug(f"File classi non trovato in: {abs_path}")
+                except Exception as e:
+                    logger.error(f"Errore nel caricamento da {file_path}: {str(e)}")
+                    logger.exception("Traceback completo:")
+        else:
+            logger.info(f"Classi caricate dalla cache: {list(classi.keys())}")
+            
+        # Aggiungi il campo nome a ciascuna classe
+        if classi and isinstance(classi, dict):
+            for classe_key, classe_data in classi.items():
+                if isinstance(classe_data, dict) and "nome" not in classe_data:
+                    classi[classe_key]["nome"] = classe_key.capitalize()
+                    logger.info(f"Aggiunto nome mancante per classe {classe_key}")
+        
+        # Se ancora nessun risultato, restituisci un dizionario vuoto
+        if not classi:
+            logger.error("Impossibile caricare le classi da qualsiasi percorso")
+            return {}
+                
+        logger.info(f"Ritorno classi: {list(classi.keys())}")
+        return classi
     
     def get_tutorials(self):
         """Ottieni i tutorial del gioco."""
@@ -305,6 +417,36 @@ class DataManager:
         except Exception as e:
             logger.error(f"Errore nel salvataggio del file {file_path}: {str(e)}")
             return False
+    
+    def get_monsters(self, monster_id=None):
+        """
+        Ottieni dati di uno o tutti i mostri.
+        
+        Args:
+            monster_id (str, optional): ID dello specifico mostro richiesto.
+            
+        Returns:
+            dict: Dati del mostro o di tutti i mostri.
+        """
+        mostri = self.load_data("mostri", "monsters.json")
+        if monster_id:
+            return mostri.get(monster_id, {})
+        return mostri
+    
+    def get_map_data(self, map_id=None):
+        """
+        Ottieni dati di una o tutte le mappe.
+        
+        Args:
+            map_id (str, optional): ID della specifica mappa richiesta.
+            
+        Returns:
+            dict: Dati della mappa o di tutte le mappe.
+        """
+        mappe = self.load_data("mappe", "maps.json")
+        if map_id:
+            return mappe.get(map_id, {})
+        return mappe
 
 # Istanza globale per facile accesso
 data_manager = DataManager()

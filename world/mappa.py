@@ -36,11 +36,34 @@ class Mappa:
         
     def aggiungi_oggetto(self, oggetto, x, y):
         """Aggiunge un oggetto alla mappa in una posizione specifica"""
+        # Assicurati che l'oggetto abbia un token
+        if not hasattr(oggetto, 'token') or not oggetto.token:
+            # Assegna un token in base al nome o usa un default
+            nome_lower = oggetto.nome.lower()
+            if 'baule' in nome_lower or 'scrigno' in nome_lower:
+                oggetto.token = 'C'
+            elif 'porta' in nome_lower:
+                oggetto.token = 'D'
+            elif 'leva' in nome_lower:
+                oggetto.token = 'L'
+            elif 'trappola' in nome_lower:
+                oggetto.token = 'T'
+            else:
+                oggetto.token = 'O'
+        
         self.oggetti[(x, y)] = oggetto
         oggetto.posizione = (x, y, self.nome)  # Aggiorna la posizione dell'oggetto
         
     def aggiungi_npg(self, npg, x, y):
         """Aggiunge un NPG alla mappa in una posizione specifica"""
+        # Assicurati che l'NPC abbia un token
+        if not hasattr(npg, 'token') or not npg.token:
+            # Usa la prima lettera del nome o un default
+            if npg.nome:
+                npg.token = npg.nome[0].upper()
+            else:
+                npg.token = 'N'
+        
         self.npg[(x, y)] = npg
         npg.imposta_posizione(x, y)  # Utilizza il metodo esistente in NPG
         
@@ -94,9 +117,15 @@ class Mappa:
                 if pos_giocatore and pos_giocatore == (x, y):
                     riga += "P"  # Giocatore, usiamo sempre P per coerenza visiva
                 elif (x, y) in self.npg:
-                    riga += self.npg[(x, y)].token  # Usa il token dell'NPG
+                    # Assicurati che l'NPC abbia un token
+                    npg = self.npg[(x, y)]
+                    token = getattr(npg, 'token', None) or 'N'
+                    riga += token
                 elif (x, y) in self.oggetti:
-                    riga += self.oggetti[(x, y)].token  # Usa il token dell'oggetto
+                    # Assicurati che l'oggetto abbia un token
+                    obj = self.oggetti[(x, y)]
+                    token = getattr(obj, 'token', None) or 'O'
+                    riga += token
                 elif self.griglia[y][x] == 1:
                     riga += "#"  # Muro
                 else:
@@ -112,10 +141,15 @@ class Mappa:
         Args:
             x, y: Coordinate centrali
             raggio: Distanza massima in celle
-            
+                Se raggio = -1, restituisce TUTTI gli oggetti sulla mappa
+                
         Returns:
             dict: Dizionario di posizioni e oggetti
         """
+        # Se raggio è -1, restituisci tutti gli oggetti sulla mappa
+        if raggio == -1:
+            return self.oggetti.copy()
+            
         oggetti_vicini = {}
         for dx in range(-raggio, raggio + 1):
             for dy in range(-raggio, raggio + 1):
@@ -131,10 +165,15 @@ class Mappa:
         Args:
             x, y: Coordinate centrali
             raggio: Distanza massima in celle
-            
+                Se raggio = -1, restituisce TUTTI gli NPG sulla mappa
+                
         Returns:
             dict: Dizionario di posizioni e NPG
         """
+        # Se raggio è -1, restituisci tutti gli NPC sulla mappa
+        if raggio == -1:
+            return self.npg.copy()
+            
         npg_vicini = {}
         for dx in range(-raggio, raggio + 1):
             for dy in range(-raggio, raggio + 1):
@@ -232,6 +271,21 @@ class Mappa:
                 # Crea l'oggetto usando from_dict se disponibile
                 if isinstance(obj_data, dict):
                     obj = OggettoInterattivo.from_dict(obj_data)
+                    
+                    # Assicurati che l'oggetto abbia un token
+                    if not hasattr(obj, 'token') or not obj.token:
+                        nome_lower = obj.nome.lower() if hasattr(obj, 'nome') else ""
+                        if 'baule' in nome_lower or 'scrigno' in nome_lower:
+                            obj.token = 'C'
+                        elif 'porta' in nome_lower:
+                            obj.token = 'D'
+                        elif 'leva' in nome_lower:
+                            obj.token = 'L'
+                        elif 'trappola' in nome_lower:
+                            obj.token = 'T'
+                        else:
+                            obj.token = 'O'
+                    
                     mappa.oggetti[pos] = obj
                     # Aggiorna la posizione dell'oggetto
                     obj.posizione = (pos[0], pos[1], mappa.nome)
@@ -251,6 +305,13 @@ class Mappa:
                         npg = NPG.from_dict(npg_data)
                     else:
                         npg = NPG(npg_data.get("nome", "NPC"), token=npg_data.get("token", "N"))
+                    
+                    # Assicurati che l'NPC abbia un token
+                    if not hasattr(npg, 'token') or not npg.token:
+                        if hasattr(npg, 'nome') and npg.nome:
+                            npg.token = npg.nome[0].upper()
+                        else:
+                            npg.token = 'N'
                     
                     mappa.npg[pos] = npg
                     npg.imposta_posizione(pos[0], pos[1])

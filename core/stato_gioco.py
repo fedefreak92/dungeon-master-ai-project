@@ -144,7 +144,7 @@ class StatoGioco:
         inventario = [obj.nome for obj in self.game.giocatore.inventario]
         
         # Stato corrente come stringa
-        stato_nome = type(self.game.stato_corrente()).__name__
+        stato_nome = type(self.game.stato_corrente()).__name__ if self.game.stato_corrente() else "Nessuno"
         
         # Caratteristiche serializzabili e semplificate
         statistiche = {
@@ -248,13 +248,65 @@ class StatoGioco:
         return self.game.carica(file_path)
     
     def ottieni_posizione_giocatore(self):
-        """
-        Restituisce informazioni sulla posizione corrente del giocatore
+        """Restituisce informazioni sulla posizione del giocatore"""
+        if not hasattr(self, 'game') or not hasattr(self.game, 'giocatore'):
+            return None
         
-        Returns:
-            Dizionario con le informazioni sulla posizione
-        """
-        return self.game.ottieni_posizione_giocatore()
+        giocatore = self.game.giocatore
+        
+        if not giocatore.mappa_corrente:
+            return None
+        
+        mappa_corrente = self.game.gestore_mappe.ottieni_mappa(giocatore.mappa_corrente)
+        
+        if not mappa_corrente:
+            return None
+        
+        # Usa -1 come raggio per ottenere TUTTI gli elementi sulla mappa
+        oggetti_vicini = mappa_corrente.ottieni_oggetti_vicini(giocatore.x, giocatore.y, -1)
+        npg_vicini = mappa_corrente.ottieni_npg_vicini(giocatore.x, giocatore.y, -1)
+        
+        # Converti le chiavi da tuple a stringhe per JSON
+        oggetti_json = {}
+        for pos, obj in oggetti_vicini.items():
+            # Assicurati che ogni oggetto abbia un token
+            if not hasattr(obj, 'token') or not obj.token:
+                obj.token = 'O'  # Token di default per oggetti
+            
+            # Converti la posizione in stringa per JSON
+            pos_str = f"({pos[0]}, {pos[1]})"
+            oggetti_json[pos_str] = {
+                "nome": obj.nome,
+                "token": obj.token,
+                "stato": getattr(obj, 'stato', 'normale')
+            }
+        
+        npg_json = {}
+        for pos, npg in npg_vicini.items():
+            # Assicurati che ogni NPC abbia un token
+            if not hasattr(npg, 'token') or not npg.token:
+                npg.token = 'N'  # Token di default per NPC
+            
+            # Converti la posizione in stringa per JSON
+            pos_str = f"({pos[0]}, {pos[1]})"
+            npg_json[pos_str] = {
+                "nome": npg.nome,
+                "token": npg.token
+            }
+        
+        # Crea una risposta completa con tutti i dati necessari
+        return {
+            "mappa": giocatore.mappa_corrente,
+            "nome_mappa": giocatore.mappa_corrente.capitalize(),
+            "x": giocatore.x,
+            "y": giocatore.y,
+            "larghezza": mappa_corrente.larghezza,
+            "altezza": mappa_corrente.altezza,
+            "griglia": mappa_corrente.griglia,
+            "griglia_ascii": mappa_corrente.genera_rappresentazione_ascii((giocatore.x, giocatore.y)),
+            "oggetti_vicini": oggetti_json,
+            "npg_vicini": npg_json
+        }
     
     def muovi_giocatore(self, direzione):
         """
@@ -266,4 +318,31 @@ class StatoGioco:
         Returns:
             True se il movimento è avvenuto, False altrimenti
         """
-        return self.game.muovi_giocatore(direzione) 
+        return self.game.muovi_giocatore(direzione)
+    
+    def debug_stack_stati(self):
+        """
+        Fornisce informazioni sullo stack degli stati per scopi di debug
+        
+        Returns:
+            str: Stringa descrittiva dello stack degli stati
+        """
+        try:
+            # Ottieni lo stato corrente
+            stato_corrente = self.game.stato_corrente()
+            stato_corrente_nome = type(stato_corrente).__name__ if stato_corrente else "Nessuno"
+            
+            # Ottieni lo stack completo
+            stack_nomi = [type(s).__name__ for s in self.game.stato_stack]
+            
+            # Crea una rappresentazione dettagliata
+            stack_info = {
+                "stato_corrente": stato_corrente_nome,
+                "stack_completo": stack_nomi,
+                "numero_stati": len(self.game.stato_stack)
+            }
+            
+            # Stringa di sintesi per i log
+            return f"Stato corrente: {stato_corrente_nome}, Stack: {stack_nomi}"
+        except Exception as e:
+            return f"Errore nel debug stack: {e}" 

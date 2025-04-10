@@ -68,12 +68,19 @@ class SceltaMappaState(BaseGameState):
         # Ottieni la scelta dell'utente
         scelta = gioco.io.richiedi_input("\nScegli una destinazione: ")
         
+        # Verifica se l'input è vuoto
+        if not scelta or not scelta.strip():
+            gioco.io.messaggio_errore("Inserisci un numero valido.")
+            avanti(gioco)
+            # Non richiamare ricorsivamente ma torna al chiamante
+            return
+            
         try:
             scelta_num = int(scelta)
             
             # Verifica se l'utente ha scelto di tornare indietro
             if scelta_num == len(mappe_disponibili) + 1:
-                if gioco.stato_corrente():
+                if gioco.stato_corrente() is self:
                     gioco.pop_stato()  # Torna allo stato precedente
                 return
                 
@@ -103,23 +110,15 @@ class SceltaMappaState(BaseGameState):
                         # Comportamento normale quando si è già nella mappa
                         gioco.io.mostra_messaggio("Sei già in questa posizione.")
                         avanti(gioco)
-                        
-                        # Invece di tornare allo stato precedente, rimaniamo nello stato corrente
-                        # Richiediamo di nuovo l'input all'utente
-                        self.esegui(gioco)
                         return
             else:
                 gioco.io.messaggio_errore("Scelta non valida.")
                 avanti(gioco)
-                # Richiediamo di nuovo l'input
-                self.esegui(gioco)
                 return
                 
         except ValueError:
             gioco.io.messaggio_errore("Inserisci un numero valido.")
             avanti(gioco)
-            # Richiediamo di nuovo l'input
-            self.esegui(gioco)
             return
             
     def _cambia_mappa(self, gioco, mappa_destinazione):
@@ -130,9 +129,13 @@ class SceltaMappaState(BaseGameState):
             gioco: L'istanza del gioco
             mappa_destinazione: Nome della mappa di destinazione
         """
-        # Cambia la mappa corrente del giocatore
-        mappa = gioco.gestore_mappe.ottieni_mappa(mappa_destinazione)
-        if mappa:
+        try:
+            # Cambia la mappa corrente del giocatore
+            mappa = gioco.gestore_mappe.ottieni_mappa(mappa_destinazione)
+            if not mappa:
+                gioco.io.messaggio_errore(f"Mappa {mappa_destinazione} non trovata.")
+                return
+                
             # Prepara il nuovo stato in base alla mappa scelta
             nuovo_stato = None
             if mappa_destinazione == "taverna":
@@ -154,20 +157,32 @@ class SceltaMappaState(BaseGameState):
                 x, y = mappa.pos_iniziale_giocatore
                 gioco.giocatore.imposta_posizione(mappa_destinazione, x, y)
                 
+                # Stampiamo un messaggio di debug
+                gioco.io.mostra_messaggio(f"DEBUG: Posizione impostata a {mappa_destinazione} ({x}, {y})")
+                
+                # Verifica che la posizione sia stata impostata correttamente
+                if gioco.giocatore.mappa_corrente != mappa_destinazione:
+                    gioco.io.messaggio_errore(f"Errore: impossibile impostare la mappa corrente a {mappa_destinazione}")
+                    return
+                
                 # Invece di rimuovere questo stato e poi aggiungere quello nuovo,
                 # sostituiamo direttamente lo stato corrente usando cambia_stato
-                nuovo_stato.set_game_context(gioco)
+                if hasattr(nuovo_stato, 'set_game_context'):
+                    nuovo_stato.set_game_context(gioco)
                 gioco.cambia_stato(nuovo_stato)
                 
                 # Aggiungiamo un messaggio per confermare all'utente che è arrivato
                 gioco.io.mostra_messaggio(f"Sei arrivato a {mappa_destinazione.capitalize()}.")
                 
                 # Eseguiamo subito lo stato per evitare interruzioni del flusso
-                nuovo_stato.esegui(gioco)
+                try:
+                    nuovo_stato.esegui(gioco)
+                except Exception as e:
+                    gioco.io.messaggio_errore(f"Errore nell'esecuzione del nuovo stato: {str(e)}")
             else:
                 gioco.io.messaggio_errore(f"Errore nella creazione dello stato per {mappa_destinazione}.")
-        else:
-            gioco.io.messaggio_errore(f"Mappa {mappa_destinazione} non trovata.")
+        except Exception as e:
+            gioco.io.messaggio_errore(f"Errore durante il cambio mappa: {str(e)}")
             
     def to_dict(self):
         """

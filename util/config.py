@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 # Definizione delle cartelle principali
 BASE_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = BASE_DIR / "data"
-SAVE_DIR = BASE_DIR / "salvataggi"
-SESSIONS_DIR = BASE_DIR / "sessioni"
-BACKUPS_DIR = BASE_DIR / "backup"
+SAVE_DIR = BASE_DIR / "save"
+SESSIONS_DIR = BASE_DIR / "sessions"
+BACKUPS_DIR = BASE_DIR / "backups"
 
 # Assicurati che tutte le directory esistano
 for directory in [DATA_DIR, SAVE_DIR, SESSIONS_DIR, BACKUPS_DIR]:

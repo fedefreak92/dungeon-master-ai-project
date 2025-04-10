@@ -1,5 +1,6 @@
 {
   "guerriero": {
+    "nome": "Guerriero",
     "descrizione": "Un combattente specializzato nell'uso delle armi e delle armature pesanti",
     "statistiche_base": {
       "forza": 15,
@@ -23,6 +24,7 @@
     }
   },
   "mago": {
+    "nome": "Mago",
     "descrizione": "Un incantatore che ha imparato a manipolare la magia attraverso lo studio",
     "statistiche_base": {
       "forza": 6,
@@ -47,6 +49,7 @@
     }
   },
   "ladro": {
+    "nome": "Ladro",
     "descrizione": "Un abile furfante specializzato nella furtività e nelle serrature",
     "statistiche_base": {
       "forza": 8,
@@ -71,6 +74,7 @@
     }
   },
   "chierico": {
+    "nome": "Chierico",
     "descrizione": "Un sacerdote che canalizza la potenza divina",
     "statistiche_base": {
       "forza": 10,

@@ -1,0 +1,2473 @@
+{
+    "giocatore": {
+        "nome": "lollino",
+        "hp": 25,
+        "hp_max": 25,
+        "token": "P",
+        "forza_base": 11,
+        "destrezza_base": 10,
+        "costituzione_base": 12,
+        "intelligenza_base": 16,
+        "saggezza_base": 10,
+        "carisma_base": 10,
+        "x": 12,
+        "y": 8,
+        "mappa_corrente": "taverna",
+        "abilita_competenze": {
+            "arcano": true,
+            "storia": true
+        },
+        "bonus_competenza": 2,
+        "difesa": 4,
+        "inventario": [
+            {
+                "nome": "Chiave comune",
+                "tipo": "chiave",
+                "effetto": {},
+                "valore": 1,
+                "descrizione": "Una chiave semplice che potrebbe aprire porte o forzieri"
+            },
+            {
+                "nome": "Bastone arcano",
+                "tipo": "arma",
+                "effetto": {
+                    "forza": 1,
+                    "intelligenza": 2
+                },
+                "valore": 20,
+                "descrizione": "Un bastone che amplifica i poteri magici"
+            },
+            {
+                "nome": "Veste da mago",
+                "tipo": "armatura",
+                "effetto": {
+                    "difesa": 1,
+                    "intelligenza": 1
+                },
+                "valore": 15,
+                "descrizione": "Una veste leggera con proprietà magiche"
+            },
+            {
+                "nome": "Anello della mente",
+                "tipo": "accessorio",
+                "effetto": {
+                    "intelligenza": 1
+                },
+                "valore": 10,
+                "descrizione": "Un anello che migliora la concentrazione"
+            }
+        ],
+        "oro": 120,
+        "esperienza": 0,
+        "livello": 2,
+        "arma": {
+            "nome": "Bastone arcano",
+            "tipo": "arma",
+            "effetto": {
+                "forza": 1,
+                "intelligenza": 2
+            },
+            "valore": 20,
+            "descrizione": "Un bastone che amplifica i poteri magici"
+        },
+        "armatura": {
+            "nome": "Veste da mago",
+            "tipo": "armatura",
+            "effetto": {
+                "difesa": 1,
+                "intelligenza": 1
+            },
+            "valore": 15,
+            "descrizione": "Una veste leggera con proprietà magiche"
+        },
+        "accessori": [
+            {
+                "nome": "Anello della mente",
+                "tipo": "accessorio",
+                "effetto": {
+                    "intelligenza": 1
+                },
+                "valore": 10,
+                "descrizione": "Un anello che migliora la concentrazione"
+            }
+        ],
+        "classe": "mago",
+        "progresso_missioni": {},
+        "missioni_attive": [],
+        "missioni_completate": [],
+        "posizione": [
+            12,
+            8
+        ]
+    },
+    "stati": [
+        {
+            "type": "TavernaState",
+            "nome_stato": "taverna",
+            "fase": "salva_partita",
+            "ultimo_input": "12",
+            "ultima_scelta": "12",
+            "npg_nomi": [
+                "Durnan",
+                "Elminster",
+                "Mirt"
+            ]
+        }
+    ],
+    "attivo": true,
+    "mappa_corrente": "taverna",
+    "versione_gioco": "1.0.0",
+    "timestamp": 1743960454.2289245,
+    "mappe": {
+        "mappe": {
+            "taverna": {
+                "nome": "taverna",
+                "larghezza": 25,
+                "altezza": 20,
+                "tipo": "interno",
+                "griglia": [
+                    [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+                ],
+                "oggetti": {
+                    "(4, 4)": {
+                        "nome": "Bancone",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Un lungo bancone di legno dove Durnan serve le bevande",
+                        "stato": "normale",
+                        "posizione": [
+                            4,
+                            4,
+                            "taverna"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "normale": "Un lungo bancone di legno dove Durnan serve le bevande"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(15, 3)": {
+                        "nome": "Camino",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Un grande camino in pietra che riscalda la taverna",
+                        "stato": "acceso",
+                        "posizione": [
+                            15,
+                            3,
+                            "taverna"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "acceso": "Le fiamme danzano allegramente nel camino, riscaldando l'ambiente",
+                            "spento": "Il camino è freddo e le ceneri sono grigie"
+                        },
+                        "stati_possibili": {
+                            "acceso": [
+                                "spento"
+                            ],
+                            "spento": [
+                                "acceso"
+                            ]
+                        },
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(8, 10)": {
+                        "nome": "Baule del tesoro",
+                        "tipo": "baule",
+                        "descrizione": "Un grande baule di legno con rinforzi in metallo",
+                        "stato": "chiuso",
+                        "posizione": [
+                            8,
+                            10,
+                            "taverna"
+                        ],
+                        "token": "C",
+                        "descrizioni_stati": {
+                            "chiuso": "Un grande baule di legno con rinforzi in metallo"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "contenuto": [
+                            {
+                                "nome": "Anello d'oro",
+                                "tipo": "accessorio",
+                                "effetto": {
+                                    "carisma": 1
+                                },
+                                "valore": 30,
+                                "descrizione": "Un prezioso anello d'oro"
+                            },
+                            {
+                                "nome": "Pozione di cura",
+                                "tipo": "cura",
+                                "effetto": {
+                                    "cura": 10
+                                },
+                                "valore": 25,
+                                "descrizione": "Una pozione che ripristina 10 punti vita"
+                            }
+                        ],
+                        "richiede_chiave": true
+                    },
+                    "(22, 9)": {
+                        "nome": "Porta segreta",
+                        "tipo": "porta",
+                        "descrizione": "Una porta nascosta dietro uno scaffale",
+                        "stato": "chiusa",
+                        "posizione": [
+                            22,
+                            9,
+                            "taverna"
+                        ],
+                        "token": "D",
+                        "descrizioni_stati": {
+                            "chiusa": "Una porta nascosta dietro uno scaffale"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "richiede_chiave": true,
+                        "posizione_destinazione": "cantina"
+                    },
+                    "(12, 18)": {
+                        "nome": "Porta del mercato",
+                        "tipo": "porta",
+                        "descrizione": "Una solida porta di legno che conduce al mercato",
+                        "stato": "chiusa",
+                        "posizione": [
+                            12,
+                            18,
+                            "taverna"
+                        ],
+                        "token": "D",
+                        "descrizioni_stati": {
+                            "chiusa": "Una solida porta di legno che conduce al mercato"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "richiede_chiave": false,
+                        "posizione_destinazione": "mercato"
+                    },
+                    "(20, 5)": {
+                        "nome": "Leva della parete",
+                        "tipo": "leva",
+                        "descrizione": "Una leva metallica incastonata nella parete",
+                        "stato": "disattivata",
+                        "posizione": [
+                            20,
+                            5,
+                            "taverna"
+                        ],
+                        "token": "L",
+                        "descrizioni_stati": {
+                            "disattivata": "Una leva metallica incastonata nella parete"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(10, 15)": {
+                        "nome": "Trappola a spuntoni",
+                        "tipo": "trappola",
+                        "descrizione": "Spuntoni nascosti nel pavimento",
+                        "stato": "attiva",
+                        "posizione": [
+                            10,
+                            15,
+                            "taverna"
+                        ],
+                        "token": "T",
+                        "descrizioni_stati": {
+                            "attiva": "Spuntoni nascosti nel pavimento"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "danno": 8,
+                        "difficolta_salvezza": 12
+                    },
+                    "(18, 15)": {
+                        "nome": "Altare magico",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Un antico altare con simboli misteriosi",
+                        "stato": "inattivo",
+                        "posizione": [
+                            18,
+                            15,
+                            "taverna"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "inattivo": "Un antico altare con simboli misteriosi che sembrano spenti",
+                            "attivo": "L'altare emette una luce blu intensa e i simboli brillano",
+                            "esaminato": "Noti che l'altare ha delle rune che formano un incantesimo antico"
+                        },
+                        "stati_possibili": {
+                            "inattivo": [
+                                "esaminato",
+                                "attivo"
+                            ],
+                            "esaminato": [
+                                "attivo"
+                            ],
+                            "attivo": [
+                                "inattivo"
+                            ]
+                        },
+                        "abilita_richieste": {
+                            "percezione": "esaminato",
+                            "arcano": "attivo"
+                        },
+                        "difficolta_abilita": {
+                            "percezione": 12,
+                            "arcano": 15
+                        },
+                        "messaggi_interazione": {
+                            "percezione": "Scrutando attentamente l'altare, noti delle incisioni nascoste",
+                            "arcano": "Utilizzando la tua conoscenza arcana, attivi l'antico potere dell'altare"
+                        }
+                    },
+                    "(3, 7)": {
+                        "nome": "Vaso antico",
+                        "tipo": "oggetto_rompibile",
+                        "descrizione": "Un vaso decorato di ceramica antica",
+                        "stato": "integro",
+                        "posizione": [
+                            3,
+                            7,
+                            "taverna"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "integro": "Un vaso decorato di ceramica antica"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "forza_richiesta": 5,
+                        "materiali": [
+                            {
+                                "nome": "Moneta d'oro",
+                                "tipo": "comune",
+                                "effetto": {},
+                                "valore": 1,
+                                "descrizione": "Una moneta d'oro lucida"
+                            }
+                        ]
+                    },
+                    "(2, 8)": {
+                        "nome": "Bancone",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Un lungo bancone di legno lucido dove vengono servite le bevande.",
+                        "stato": "pulito",
+                        "posizione": [
+                            2,
+                            8,
+                            "taverna"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "pulito": "Un lungo bancone di legno lucido dove vengono servite le bevande."
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(22, 11)": {
+                        "nome": "Camino",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Un grande camino in pietra con un fuoco scoppiettante.",
+                        "stato": "acceso",
+                        "posizione": [
+                            22,
+                            11,
+                            "taverna"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "acceso": "Un grande camino in pietra con un fuoco scoppiettante."
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(5, 17)": {
+                        "nome": "Baule nascosto",
+                        "tipo": "baule",
+                        "descrizione": "Un piccolo baule nascosto sotto una tavola del pavimento.",
+                        "stato": "chiuso",
+                        "posizione": [
+                            5,
+                            17,
+                            "taverna"
+                        ],
+                        "token": "C",
+                        "descrizioni_stati": {
+                            "chiuso": "Un piccolo baule nascosto sotto una tavola del pavimento."
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "contenuto": [
+                            {
+                                "nome": "Chiave rugginosa",
+                                "tipo": "chiave",
+                                "effetto": {},
+                                "valore": 2,
+                                "descrizione": "Una vecchia chiave arrugginita."
+                            }
+                        ],
+                        "richiede_chiave": false
+                    },
+                    "(21, 1)": {
+                        "nome": "Porta della cantina",
+                        "tipo": "porta",
+                        "descrizione": "Una robusta porta che conduce alla cantina.",
+                        "stato": "chiusa",
+                        "posizione": [
+                            21,
+                            1,
+                            "taverna"
+                        ],
+                        "token": "D",
+                        "descrizioni_stati": {
+                            "chiusa": "Una robusta porta che conduce alla cantina."
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "richiede_chiave": true,
+                        "posizione_destinazione": "cantina"
+                    },
+                    "(8, 16)": {
+                        "nome": "Trappola nel pavimento",
+                        "tipo": "trappola",
+                        "descrizione": "Una parte del pavimento sembra instabile.",
+                        "stato": "attiva",
+                        "posizione": [
+                            8,
+                            16,
+                            "taverna"
+                        ],
+                        "token": "T",
+                        "descrizioni_stati": {
+                            "attiva": "Una parte del pavimento sembra instabile."
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "danno": 5,
+                        "difficolta_salvezza": 10
+                    },
+                    "(2, 11)": {
+                        "nome": "Leva segreta",
+                        "tipo": "leva",
+                        "descrizione": "Una leva nascosta dietro un quadro.",
+                        "stato": "disattivata",
+                        "posizione": [
+                            2,
+                            11,
+                            "taverna"
+                        ],
+                        "token": "L",
+                        "descrizioni_stati": {
+                            "disattivata": "Una leva nascosta dietro un quadro."
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(17, 6)": {
+                        "nome": "Altare magico",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Un antico altare con simboli misteriosi.",
+                        "stato": "inattivo",
+                        "posizione": [
+                            17,
+                            6,
+                            "taverna"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "inattivo": "Un antico altare con simboli misteriosi che sembrano spenti.",
+                            "attivo": "L'altare emette una luce blu intensa e i simboli brillano.",
+                            "esaminato": "Noti che l'altare ha delle rune che formano un incantesimo antico."
+                        },
+                        "stati_possibili": {
+                            "inattivo": [
+                                "esaminato",
+                                "attivo"
+                            ],
+                            "esaminato": [
+                                "attivo"
+                            ],
+                            "attivo": [
+                                "inattivo"
+                            ]
+                        },
+                        "abilita_richieste": {
+                            "percezione": "esaminato",
+                            "arcano": "attivo"
+                        },
+                        "difficolta_abilita": {
+                            "percezione": 12,
+                            "arcano": 15
+                        },
+                        "messaggi_interazione": {
+                            "percezione": "Scrutando attentamente l'altare, noti delle incisioni nascoste.",
+                            "arcano": "Utilizzando la tua conoscenza arcana, attivi l'antico potere dell'altare."
+                        }
+                    }
+                },
+                "npg": {
+                    "(6, 6)": {
+                        "nome": "Durnan",
+                        "hp": 30,
+                        "hp_max": 30,
+                        "token": "D",
+                        "forza_base": 10,
+                        "destrezza_base": 10,
+                        "costituzione_base": 10,
+                        "intelligenza_base": 10,
+                        "saggezza_base": 10,
+                        "carisma_base": 10,
+                        "x": 6,
+                        "y": 6,
+                        "mappa_corrente": null,
+                        "abilita_competenze": {},
+                        "bonus_competenza": 2,
+                        "difesa": 1,
+                        "inventario": [
+                            {
+                                "nome": "Pugnale",
+                                "tipo": "arma",
+                                "effetto": {},
+                                "valore": 10,
+                                "descrizione": "Un semplice pugnale affilato"
+                            },
+                            {
+                                "nome": "Pozione di cura",
+                                "tipo": "cura",
+                                "effetto": {},
+                                "valore": 25,
+                                "descrizione": "Una pozione curativa di media potenza"
+                            }
+                        ],
+                        "oro": 500,
+                        "esperienza": 0,
+                        "livello": 5,
+                        "arma": null,
+                        "armatura": null,
+                        "accessori": [],
+                        "stato_corrente": "default",
+                        "background": "",
+                        "professione": "Taverniere"
+                    },
+                    "(9, 9)": {
+                        "nome": "Elminster",
+                        "hp": 70,
+                        "hp_max": 70,
+                        "token": "E",
+                        "forza_base": 10,
+                        "destrezza_base": 10,
+                        "costituzione_base": 10,
+                        "intelligenza_base": 10,
+                        "saggezza_base": 10,
+                        "carisma_base": 10,
+                        "x": 9,
+                        "y": 9,
+                        "mappa_corrente": null,
+                        "abilita_competenze": {},
+                        "bonus_competenza": 2,
+                        "difesa": 1,
+                        "inventario": [
+                            {
+                                "nome": "Bastone del potere",
+                                "tipo": "arma",
+                                "effetto": {},
+                                "valore": 500,
+                                "descrizione": "Un bastone ornato con rune misteriose"
+                            },
+                            {
+                                "nome": "Amuleto della protezione",
+                                "tipo": "accessorio",
+                                "effetto": {},
+                                "valore": 300,
+                                "descrizione": "Un amuleto che fornisce protezione magica"
+                            },
+                            {
+                                "nome": "Manuale arcano base",
+                                "tipo": "comune",
+                                "effetto": {},
+                                "valore": 50,
+                                "descrizione": "Un libro con incantesimi di base per apprendisti maghi"
+                            }
+                        ],
+                        "oro": 1000,
+                        "esperienza": 0,
+                        "livello": 20,
+                        "arma": null,
+                        "armatura": null,
+                        "accessori": [],
+                        "stato_corrente": "default",
+                        "background": "",
+                        "professione": "Mago"
+                    },
+                    "(5, 5)": {
+                        "nome": "Mirt",
+                        "hp": 45,
+                        "hp_max": 45,
+                        "token": "M",
+                        "forza_base": 10,
+                        "destrezza_base": 10,
+                        "costituzione_base": 10,
+                        "intelligenza_base": 10,
+                        "saggezza_base": 10,
+                        "carisma_base": 10,
+                        "x": 5,
+                        "y": 5,
+                        "mappa_corrente": null,
+                        "abilita_competenze": {},
+                        "bonus_competenza": 2,
+                        "difesa": 1,
+                        "inventario": [
+                            {
+                                "nome": "Spada corta",
+                                "tipo": "arma",
+                                "effetto": {},
+                                "valore": 25,
+                                "descrizione": "Una piccola spada di buona fattura"
+                            },
+                            {
+                                "nome": "Pozione di cura",
+                                "tipo": "cura",
+                                "effetto": {},
+                                "valore": 25,
+                                "descrizione": "Una pozione curativa di media potenza"
+                            },
+                            {
+                                "nome": "Amuleto della protezione",
+                                "tipo": "accessorio",
+                                "effetto": {},
+                                "valore": 60,
+                                "descrizione": "Un amuleto magico che protegge chi lo indossa"
+                            },
+                            {
+                                "nome": "Mappa del Sottomonte",
+                                "tipo": "comune",
+                                "effetto": {},
+                                "valore": 100,
+                                "descrizione": "Una mappa dettagliata dei primi tre livelli del Sottomonte"
+                            }
+                        ],
+                        "oro": 2000,
+                        "esperienza": 0,
+                        "livello": 8,
+                        "arma": null,
+                        "armatura": null,
+                        "accessori": [],
+                        "stato_corrente": "default",
+                        "background": "",
+                        "professione": "Mercante"
+                    },
+                    "(23, 1)": {
+                        "nome": "Durnan",
+                        "hp": 30,
+                        "hp_max": 30,
+                        "token": "D",
+                        "forza_base": 10,
+                        "destrezza_base": 10,
+                        "costituzione_base": 10,
+                        "intelligenza_base": 10,
+                        "saggezza_base": 10,
+                        "carisma_base": 10,
+                        "x": 23,
+                        "y": 1,
+                        "mappa_corrente": null,
+                        "abilita_competenze": {},
+                        "bonus_competenza": 2,
+                        "difesa": 1,
+                        "inventario": [
+                            {
+                                "nome": "Pugnale",
+                                "tipo": "arma",
+                                "effetto": {},
+                                "valore": 10,
+                                "descrizione": "Un semplice pugnale affilato"
+                            },
+                            {
+                                "nome": "Pozione di cura",
+                                "tipo": "cura",
+                                "effetto": {},
+                                "valore": 25,
+                                "descrizione": "Una pozione curativa di media potenza"
+                            }
+                        ],
+                        "oro": 500,
+                        "esperienza": 0,
+                        "livello": 5,
+                        "arma": null,
+                        "armatura": null,
+                        "accessori": [],
+                        "stato_corrente": "default",
+                        "background": "",
+                        "professione": "Taverniere"
+                    },
+                    "(11, 4)": {
+                        "nome": "Elminster",
+                        "hp": 70,
+                        "hp_max": 70,
+                        "token": "E",
+                        "forza_base": 10,
+                        "destrezza_base": 10,
+                        "costituzione_base": 10,
+                        "intelligenza_base": 10,
+                        "saggezza_base": 10,
+                        "carisma_base": 10,
+                        "x": 11,
+                        "y": 4,
+                        "mappa_corrente": null,
+                        "abilita_competenze": {},
+                        "bonus_competenza": 2,
+                        "difesa": 1,
+                        "inventario": [
+                            {
+                                "nome": "Bastone del potere",
+                                "tipo": "arma",
+                                "effetto": {},
+                                "valore": 500,
+                                "descrizione": "Un bastone ornato con rune misteriose"
+                            },
+                            {
+                                "nome": "Amuleto della protezione",
+                                "tipo": "accessorio",
+                                "effetto": {},
+                                "valore": 300,
+                                "descrizione": "Un amuleto che fornisce protezione magica"
+                            },
+                            {
+                                "nome": "Manuale arcano base",
+                                "tipo": "comune",
+                                "effetto": {},
+                                "valore": 50,
+                                "descrizione": "Un libro con incantesimi di base per apprendisti maghi"
+                            }
+                        ],
+                        "oro": 1000,
+                        "esperienza": 0,
+                        "livello": 20,
+                        "arma": null,
+                        "armatura": null,
+                        "accessori": [],
+                        "stato_corrente": "default",
+                        "background": "",
+                        "professione": "Mago"
+                    },
+                    "(16, 5)": {
+                        "nome": "Mirt",
+                        "hp": 45,
+                        "hp_max": 45,
+                        "token": "M",
+                        "forza_base": 10,
+                        "destrezza_base": 10,
+                        "costituzione_base": 10,
+                        "intelligenza_base": 10,
+                        "saggezza_base": 10,
+                        "carisma_base": 10,
+                        "x": 16,
+                        "y": 5,
+                        "mappa_corrente": null,
+                        "abilita_competenze": {},
+                        "bonus_competenza": 2,
+                        "difesa": 1,
+                        "inventario": [
+                            {
+                                "nome": "Spada corta",
+                                "tipo": "arma",
+                                "effetto": {},
+                                "valore": 25,
+                                "descrizione": "Una piccola spada di buona fattura"
+                            },
+                            {
+                                "nome": "Pozione di cura",
+                                "tipo": "cura",
+                                "effetto": {},
+                                "valore": 25,
+                                "descrizione": "Una pozione curativa di media potenza"
+                            },
+                            {
+                                "nome": "Amuleto della protezione",
+                                "tipo": "accessorio",
+                                "effetto": {},
+                                "valore": 60,
+                                "descrizione": "Un amuleto magico che protegge chi lo indossa"
+                            },
+                            {
+                                "nome": "Mappa del Sottomonte",
+                                "tipo": "comune",
+                                "effetto": {},
+                                "valore": 100,
+                                "descrizione": "Una mappa dettagliata dei primi tre livelli del Sottomonte"
+                            }
+                        ],
+                        "oro": 2000,
+                        "esperienza": 0,
+                        "livello": 8,
+                        "arma": null,
+                        "armatura": null,
+                        "accessori": [],
+                        "stato_corrente": "default",
+                        "background": "",
+                        "professione": "Mercante"
+                    }
+                },
+                "porte": {},
+                "pos_iniziale_giocatore": [
+                    12,
+                    8
+                ]
+            },
+            "mercato": {
+                "nome": "mercato",
+                "larghezza": 15,
+                "altezza": 10,
+                "tipo": "esterno",
+                "griglia": [
+                    [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    ]
+                ],
+                "oggetti": {
+                    "(3, 3)": {
+                        "nome": "Bancarella di frutta",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Una bancarella colorata piena di frutta fresca",
+                        "stato": "normale",
+                        "posizione": [
+                            3,
+                            3,
+                            "mercato"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "normale": "Una bancarella colorata piena di frutta fresca"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "contenuto": [
+                            {
+                                "nome": "Mela",
+                                "tipo": "cibo",
+                                "effetto": {
+                                    "cura": 2
+                                },
+                                "valore": 1,
+                                "descrizione": "Una mela rossa e succosa"
+                            }
+                        ]
+                    },
+                    "(10, 5)": {
+                        "nome": "Fontana",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Una fontana decorativa al centro della piazza",
+                        "stato": "attiva",
+                        "posizione": [
+                            10,
+                            5,
+                            "mercato"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "attiva": "L'acqua zampilla vivacemente dalla fontana",
+                            "inattiva": "La fontana è ferma e l'acqua è immobile"
+                        },
+                        "stati_possibili": {
+                            "attiva": [
+                                "inattiva"
+                            ],
+                            "inattiva": [
+                                "attiva"
+                            ]
+                        },
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(7, 7)": {
+                        "nome": "Statua",
+                        "tipo": "oggetto_interattivo",
+                        "descrizione": "Una statua di un antico eroe della città",
+                        "stato": "normale",
+                        "posizione": [
+                            7,
+                            7,
+                            "mercato"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "normale": "Una statua di un antico eroe della città"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(17, 1)": {
+                        "nome": "Porta del mercato",
+                        "tipo": "porta",
+                        "descrizione": "Una solida porta di legno che conduce al mercato",
+                        "stato": "chiusa",
+                        "posizione": [
+                            17,
+                            1,
+                            "mercato"
+                        ],
+                        "token": "D",
+                        "descrizioni_stati": {
+                            "chiusa": "Una solida porta di legno che conduce al mercato"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "richiede_chiave": false,
+                        "posizione_destinazione": "mercato"
+                    },
+                    "(12, 12)": {
+                        "nome": "Vaso antico",
+                        "tipo": "oggetto_rompibile",
+                        "descrizione": "Un vaso decorato di ceramica antica",
+                        "stato": "integro",
+                        "posizione": [
+                            12,
+                            12,
+                            "mercato"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "integro": "Un vaso decorato di ceramica antica"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "forza_richiesta": 5,
+                        "materiali": [
+                            {
+                                "nome": "Moneta d'oro",
+                                "tipo": "comune",
+                                "effetto": {},
+                                "valore": 1,
+                                "descrizione": "Una moneta d'oro lucida"
+                            }
+                        ]
+                    }
+                },
+                "npg": {},
+                "porte": {},
+                "pos_iniziale_giocatore": [
+                    17,
+                    10
+                ]
+            },
+            "cantina": {
+                "nome": "cantina",
+                "larghezza": 20,
+                "altezza": 15,
+                "tipo": "dungeon",
+                "griglia": [
+                    [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                        1,
+                        1,
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1
+                    ],
+                    [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        1
+                    ]
+                ],
+                "oggetti": {
+                    "(8, 5)": {
+                        "nome": "Baule nascosto",
+                        "tipo": "baule",
+                        "descrizione": "Un piccolo baule nascosto sotto delle assi di legno",
+                        "stato": "chiuso",
+                        "posizione": [
+                            8,
+                            5,
+                            "cantina"
+                        ],
+                        "token": "C",
+                        "descrizioni_stati": {
+                            "chiuso": "Un piccolo baule nascosto sotto delle assi di legno"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "contenuto": [
+                            {
+                                "nome": "Chiave della cantina",
+                                "tipo": "chiave",
+                                "effetto": {},
+                                "valore": 10,
+                                "descrizione": "Una vecchia chiave che apre la porta della cantina"
+                            }
+                        ],
+                        "richiede_chiave": false
+                    },
+                    "(12, 8)": {
+                        "nome": "Trappola a fossa",
+                        "tipo": "trappola",
+                        "descrizione": "Una fossa nascosta che si apre sotto i piedi",
+                        "stato": "attiva",
+                        "posizione": [
+                            12,
+                            8,
+                            "cantina"
+                        ],
+                        "token": "T",
+                        "descrizioni_stati": {
+                            "attiva": "Una fossa nascosta che si apre sotto i piedi"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "danno": 5,
+                        "difficolta_salvezza": 10
+                    },
+                    "(1, 7)": {
+                        "nome": "Porta segreta",
+                        "tipo": "porta",
+                        "descrizione": "Una porta nascosta dietro uno scaffale",
+                        "stato": "chiusa",
+                        "posizione": [
+                            1,
+                            7,
+                            "cantina"
+                        ],
+                        "token": "D",
+                        "descrizioni_stati": {
+                            "chiusa": "Una porta nascosta dietro uno scaffale"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "richiede_chiave": true,
+                        "posizione_destinazione": "cantina"
+                    },
+                    "(15, 5)": {
+                        "nome": "Leva della parete",
+                        "tipo": "leva",
+                        "descrizione": "Una leva metallica incastonata nella parete",
+                        "stato": "disattivata",
+                        "posizione": [
+                            15,
+                            5,
+                            "cantina"
+                        ],
+                        "token": "L",
+                        "descrizioni_stati": {
+                            "disattivata": "Una leva metallica incastonata nella parete"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {}
+                    },
+                    "(5, 10)": {
+                        "nome": "Vaso antico",
+                        "tipo": "oggetto_rompibile",
+                        "descrizione": "Un vaso decorato di ceramica antica",
+                        "stato": "integro",
+                        "posizione": [
+                            5,
+                            10,
+                            "cantina"
+                        ],
+                        "token": "O",
+                        "descrizioni_stati": {
+                            "integro": "Un vaso decorato di ceramica antica"
+                        },
+                        "stati_possibili": {},
+                        "abilita_richieste": {},
+                        "difficolta_abilita": {},
+                        "messaggi_interazione": {},
+                        "forza_richiesta": 5,
+                        "materiali": [
+                            {
+                                "nome": "Moneta d'oro",
+                                "tipo": "comune",
+                                "effetto": {},
+                                "valore": 1,
+                                "descrizione": "Una moneta d'oro lucida"
+                            }
+                        ]
+                    }
+                },
+                "npg": {},
+                "porte": {},
+                "pos_iniziale_giocatore": [
+                    2,
+                    7
+                ]
+            }
+        },
+        "mappa_attuale": "taverna"
+    },
+    "npg": {
+        "taverna": {
+            "(6, 6)": {
+                "nome": "Durnan",
+                "hp": 30,
+                "hp_max": 30,
+                "token": "D",
+                "forza_base": 10,
+                "destrezza_base": 10,
+                "costituzione_base": 10,
+                "intelligenza_base": 10,
+                "saggezza_base": 10,
+                "carisma_base": 10,
+                "x": 6,
+                "y": 6,
+                "mappa_corrente": null,
+                "abilita_competenze": {},
+                "bonus_competenza": 2,
+                "difesa": 1,
+                "inventario": [
+                    {
+                        "nome": "Pugnale",
+                        "tipo": "arma",
+                        "effetto": {},
+                        "valore": 10,
+                        "descrizione": "Un semplice pugnale affilato"
+                    },
+                    {
+                        "nome": "Pozione di cura",
+                        "tipo": "cura",
+                        "effetto": {},
+                        "valore": 25,
+                        "descrizione": "Una pozione curativa di media potenza"
+                    }
+                ],
+                "oro": 500,
+                "esperienza": 0,
+                "livello": 5,
+                "arma": null,
+                "armatura": null,
+                "accessori": [],
+                "stato_corrente": "default",
+                "background": "",
+                "professione": "Taverniere"
+            },
+            "(9, 9)": {
+                "nome": "Elminster",
+                "hp": 70,
+                "hp_max": 70,
+                "token": "E",
+                "forza_base": 10,
+                "destrezza_base": 10,
+                "costituzione_base": 10,
+                "intelligenza_base": 10,
+                "saggezza_base": 10,
+                "carisma_base": 10,
+                "x": 9,
+                "y": 9,
+                "mappa_corrente": null,
+                "abilita_competenze": {},
+                "bonus_competenza": 2,
+                "difesa": 1,
+                "inventario": [
+                    {
+                        "nome": "Bastone del potere",
+                        "tipo": "arma",
+                        "effetto": {},
+                        "valore": 500,
+                        "descrizione": "Un bastone ornato con rune misteriose"
+                    },
+                    {
+                        "nome": "Amuleto della protezione",
+                        "tipo": "accessorio",
+                        "effetto": {},
+                        "valore": 300,
+                        "descrizione": "Un amuleto che fornisce protezione magica"
+                    },
+                    {
+                        "nome": "Manuale arcano base",
+                        "tipo": "comune",
+                        "effetto": {},
+                        "valore": 50,
+                        "descrizione": "Un libro con incantesimi di base per apprendisti maghi"
+                    }
+                ],
+                "oro": 1000,
+                "esperienza": 0,
+                "livello": 20,
+                "arma": null,
+                "armatura": null,
+                "accessori": [],
+                "stato_corrente": "default",
+                "background": "",
+                "professione": "Mago"
+            },
+            "(5, 5)": {
+                "nome": "Mirt",
+                "hp": 45,
+                "hp_max": 45,
+                "token": "M",
+                "forza_base": 10,
+                "destrezza_base": 10,
+                "costituzione_base": 10,
+                "intelligenza_base": 10,
+                "saggezza_base": 10,
+                "carisma_base": 10,
+                "x": 5,
+                "y": 5,
+                "mappa_corrente": null,
+                "abilita_competenze": {},
+                "bonus_competenza": 2,
+                "difesa": 1,
+                "inventario": [
+                    {
+                        "nome": "Spada corta",
+                        "tipo": "arma",
+                        "effetto": {},
+                        "valore": 25,
+                        "descrizione": "Una piccola spada di buona fattura"
+                    },
+                    {
+                        "nome": "Pozione di cura",
+                        "tipo": "cura",
+                        "effetto": {},
+                        "valore": 25,
+                        "descrizione": "Una pozione curativa di media potenza"
+                    },
+                    {
+                        "nome": "Amuleto della protezione",
+                        "tipo": "accessorio",
+                        "effetto": {},
+                        "valore": 60,
+                        "descrizione": "Un amuleto magico che protegge chi lo indossa"
+                    },
+                    {
+                        "nome": "Mappa del Sottomonte",
+                        "tipo": "comune",
+                        "effetto": {},
+                        "valore": 100,
+                        "descrizione": "Una mappa dettagliata dei primi tre livelli del Sottomonte"
+                    }
+                ],
+                "oro": 2000,
+                "esperienza": 0,
+                "livello": 8,
+                "arma": null,
+                "armatura": null,
+                "accessori": [],
+                "stato_corrente": "default",
+                "background": "",
+                "professione": "Mercante"
+            },
+            "(23, 1)": {
+                "nome": "Durnan",
+                "hp": 30,
+                "hp_max": 30,
+                "token": "D",
+                "forza_base": 10,
+                "destrezza_base": 10,
+                "costituzione_base": 10,
+                "intelligenza_base": 10,
+                "saggezza_base": 10,
+                "carisma_base": 10,
+                "x": 23,
+                "y": 1,
+                "mappa_corrente": null,
+                "abilita_competenze": {},
+                "bonus_competenza": 2,
+                "difesa": 1,
+                "inventario": [
+                    {
+                        "nome": "Pugnale",
+                        "tipo": "arma",
+                        "effetto": {},
+                        "valore": 10,
+                        "descrizione": "Un semplice pugnale affilato"
+                    },
+                    {
+                        "nome": "Pozione di cura",
+                        "tipo": "cura",
+                        "effetto": {},
+                        "valore": 25,
+                        "descrizione": "Una pozione curativa di media potenza"
+                    }
+                ],
+                "oro": 500,
+                "esperienza": 0,
+                "livello": 5,
+                "arma": null,
+                "armatura": null,
+                "accessori": [],
+                "stato_corrente": "default",
+                "background": "",
+                "professione": "Taverniere"
+            },
+            "(11, 4)": {
+                "nome": "Elminster",
+                "hp": 70,
+                "hp_max": 70,
+                "token": "E",
+                "forza_base": 10,
+                "destrezza_base": 10,
+                "costituzione_base": 10,
+                "intelligenza_base": 10,
+                "saggezza_base": 10,
+                "carisma_base": 10,
+                "x": 11,
+                "y": 4,
+                "mappa_corrente": null,
+                "abilita_competenze": {},
+                "bonus_competenza": 2,
+                "difesa": 1,
+                "inventario": [
+                    {
+                        "nome": "Bastone del potere",
+                        "tipo": "arma",
+                        "effetto": {},
+                        "valore": 500,
+                        "descrizione": "Un bastone ornato con rune misteriose"
+                    },
+                    {
+                        "nome": "Amuleto della protezione",
+                        "tipo": "accessorio",
+                        "effetto": {},
+                        "valore": 300,
+                        "descrizione": "Un amuleto che fornisce protezione magica"
+                    },
+                    {
+                        "nome": "Manuale arcano base",
+                        "tipo": "comune",
+                        "effetto": {},
+                        "valore": 50,
+                        "descrizione": "Un libro con incantesimi di base per apprendisti maghi"
+                    }
+                ],
+                "oro": 1000,
+                "esperienza": 0,
+                "livello": 20,
+                "arma": null,
+                "armatura": null,
+                "accessori": [],
+                "stato_corrente": "default",
+                "background": "",
+                "professione": "Mago"
+            },
+            "(16, 5)": {
+                "nome": "Mirt",
+                "hp": 45,
+                "hp_max": 45,
+                "token": "M",
+                "forza_base": 10,
+                "destrezza_base": 10,
+                "costituzione_base": 10,
+                "intelligenza_base": 10,
+                "saggezza_base": 10,
+                "carisma_base": 10,
+                "x": 16,
+                "y": 5,
+                "mappa_corrente": null,
+                "abilita_competenze": {},
+                "bonus_competenza": 2,
+                "difesa": 1,
+                "inventario": [
+                    {
+                        "nome": "Spada corta",
+                        "tipo": "arma",
+                        "effetto": {},
+                        "valore": 25,
+                        "descrizione": "Una piccola spada di buona fattura"
+                    },
+                    {
+                        "nome": "Pozione di cura",
+                        "tipo": "cura",
+                        "effetto": {},
+                        "valore": 25,
+                        "descrizione": "Una pozione curativa di media potenza"
+                    },
+                    {
+                        "nome": "Amuleto della protezione",
+                        "tipo": "accessorio",
+                        "effetto": {},
+                        "valore": 60,
+                        "descrizione": "Un amuleto magico che protegge chi lo indossa"
+                    },
+                    {
+                        "nome": "Mappa del Sottomonte",
+                        "tipo": "comune",
+                        "effetto": {},
+                        "valore": 100,
+                        "descrizione": "Una mappa dettagliata dei primi tre livelli del Sottomonte"
+                    }
+                ],
+                "oro": 2000,
+                "esperienza": 0,
+                "livello": 8,
+                "arma": null,
+                "armatura": null,
+                "accessori": [],
+                "stato_corrente": "default",
+                "background": "",
+                "professione": "Mercante"
+            }
+        },
+        "mercato": {},
+        "cantina": {}
+    }
+}

@@ -314,8 +314,18 @@ class Entita:
             self.mappa_corrente = mappa_nome_o_x
             x = x_o_y
         
-        self.x = x
-        self.y = y
+        # Assicuriamoci che le coordinate siano valide (numeri interi)
+        try:
+            self.x = int(x)
+            self.y = int(y)
+        except (ValueError, TypeError):
+            # Se c'è un errore nella conversione, impostiamo valori predefiniti
+            self.x = 0
+            self.y = 0
+            print(f"ERRORE: Coordinate non valide ({x}, {y}), impostate a (0, 0)")
+        
+        # Debug: stampa la nuova posizione
+        print(f"Posizione impostata: mappa={self.mappa_corrente}, x={self.x}, y={self.y}")
     
     def ottieni_posizione(self):
         """

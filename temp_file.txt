@@ -1,0 +1,142 @@
+﻿{
+    "giocatore": {
+        "nome": "fede",
+        "hp": 23,
+        "hp_max": 25,
+        "token": "P",
+        "forza_base": 16,
+        "destrezza_base": 10,
+        "costituzione_base": 12,
+        "intelligenza_base": 10,
+        "saggezza_base": 10,
+        "carisma_base": 10,
+        "x": 17,
+        "y": 10,
+        "mappa_corrente": "mercato",
+        "abilita_competenze": {
+            "atletica": true,
+            "intimidire": true
+        },
+        "bonus_competenza": 2,
+        "difesa": 5,
+        "inventario": [
+            {
+                "nome": "Pozione di cura",
+                "tipo": "cura",
+                "effetto": {
+                    "cura": 10
+                },
+                "valore": 5,
+                "descrizione": "Ripristina 10 punti vita"
+            },
+            {
+                "nome": "Chiave comune",
+                "tipo": "chiave",
+                "effetto": {},
+                "valore": 1,
+                "descrizione": "Una chiave semplice che potrebbe aprire porte o forzieri"
+            },
+            {
+                "nome": "Spada corta",
+                "tipo": "arma",
+                "effetto": {
+                    "forza": 3
+                },
+                "valore": 15,
+                "descrizione": "Una spada corta ma robusta"
+            },
+            {
+                "nome": "Cotta di maglia",
+                "tipo": "armatura",
+                "effetto": {
+                    "difesa": 3
+                },
+                "valore": 25,
+                "descrizione": "Una cotta di maglia che offre buona protezione"
+            },
+            {
+                "nome": "Amuleto della forza",
+                "tipo": "accessorio",
+                "effetto": {
+                    "forza": 1
+                },
+                "valore": 10,
+                "descrizione": "Un amuleto che aumenta la forza"
+            },
+            {
+                "nome": "Pozione",
+                "tipo": "vario",
+                "effetto": {},
+                "valore": 0,
+                "descrizione": ""
+            },
+            {
+                "nome": "Spada corta",
+                "tipo": "arma",
+                "effetto": {
+                    "forza": 2
+                },
+                "valore": 25,
+                "descrizione": "Una spada corta ben bilanciata"
+            },
+            {
+                "nome": "Pozione di cura",
+                "tipo": "cura",
+                "effetto": {
+                    "cura": 10
+                },
+                "valore": 15,
+                "descrizione": "Recupera 10 HP"
+            }
+        ],
+        "oro": 65,
+        "esperienza": 50,
+        "livello": 1,
+        "arma": {
+            "nome": "Spada corta",
+            "tipo": "arma",
+            "effetto": {
+                "forza": 3
+            },
+            "valore": 15,
+            "descrizione": "Una spada corta ma robusta"
+        },
+        "armatura": {
+            "nome": "Cotta di maglia",
+            "tipo": "armatura",
+            "effetto": {
+                "difesa": 3
+            },
+            "valore": 25,
+            "descrizione": "Una cotta di maglia che offre buona protezione"
+        },
+        "accessori": [
+            {
+                "nome": "Amuleto della forza",
+                "tipo": "accessorio",
+                "effetto": {
+                    "forza": 1
+                },
+                "valore": 10,
+                "descrizione": "Un amuleto che aumenta la forza"
+            }
+        ],
+        "classe": "guerriero",
+        "progresso_missioni": {},
+        "missioni_attive": [],
+        "missioni_completate": [],
+        "posizione": [
+            17,
+            10
+        ]
+    },
+    "stati": [
+        {
+            "type": "TavernaState",
+            "ultima_scelta": "12",
+            "prima_visita": false,
+            "fase": "salva_partita",
+            "ultimo_input": "12",
+            "dati_contestuali": {},
+            "npg_presenti": {
+                "Durnan": 
