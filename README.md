@@ -1,414 +1,277 @@
-# Gioco RPG
+---
 
-Gioco di ruolo testuale con frontend React e backend Flask.
+# RPG Game
 
-## Requisiti
+A text-based role-playing game with a React frontend and a Flask backend.
+
+## Requirements
 
 - Python 3.8+
 - Node.js 14+
 - npm 6+
 
-## Installazione
+## Installation
 
-1. Clona il repository:
+1. Clone the repository:
    ```
    git clone <repository-url>
    cd gioco_rpg
    ```
 
-2. Installazione delle dipendenze backend:
+2. Install backend dependencies:
    ```
    pip install -r requirements.txt
    ```
 
-3. Installazione delle dipendenze frontend (opzionale, se non vuoi usare la compilazione automatica):
+3. Install frontend dependencies (optional, if you don’t want to rely on automatic build):
    ```
    cd frontend
    npm install
    cd ..
    ```
 
-## Avvio
+## Launch
 
-### Modalità sviluppo
+### Development Mode
 
-1. Avvia il backend:
+1. Start the backend:
    ```
    python server.py --debug
    ```
 
-2. Avvia il frontend in un terminale separato:
+2. In a separate terminal, start the frontend:
    ```
    cd frontend
    npm run dev
    ```
 
-3. Accedi all'applicazione all'indirizzo:
+3. Access the application at:
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:5000/api
 
-### Modalità produzione
+### Production Mode
 
-Avvia l'applicazione completa (backend + frontend) con un unico comando:
+Start the full application (backend + frontend) with a single command:
 ```
 python server.py
 ```
 
-Il server compilerà automaticamente il frontend se necessario e servirà l'applicazione completa all'indirizzo http://localhost:5000.
+The server will automatically build the frontend if necessary and serve the complete app at http://localhost:5000.
 
-### Opzioni avvio
+### Launch Options
 
 ```
 python server.py --help
 ```
 
-Opzioni disponibili:
-- `--port PORT`: Specifica la porta su cui avviare il server (default: 5000)
-- `--debug`: Avvia il server in modalità debug
-- `--rebuild-frontend`: Forza la ricompilazione del frontend
+Available options:
+- `--port PORT`: Specify the port to run the server on (default: 5000)
+- `--debug`: Start the server in debug mode
+- `--rebuild-frontend`: Force rebuild of the frontend
 
-## Struttura dell'applicazione
+## Application Structure
 
-- `server.py`: Punto di ingresso dell'applicazione backend
-- `frontend/`: Contiene il codice sorgente del frontend React
-  - `src/`: Codice sorgente React
-  - `public/`: File statici
-  - `dist/`: Build del frontend (generata automaticamente)
+- `server.py`: Entry point for the backend application
+- `frontend/`: Contains the React frontend source code
+  - `src/`: React source code
+  - `public/`: Static files
+  - `dist/`: Built frontend (auto-generated)
 
 ## API
 
-Le API del backend sono accessibili tramite il prefisso `/api`. Per l'elenco completo degli endpoint disponibili, visita `/api` dopo aver avviato il server.
+Backend APIs are accessible under the `/api` prefix. For a full list of endpoints, visit `/api` after starting the server.
 
-## Sviluppo
+## Development
 
 ### Backend
 
-Per aggiungere nuove funzionalità al backend, modifica il file `server.py` e aggiungi nuovi endpoint API.
+To add new backend features, edit `server.py` and create new API endpoints.
 
 ### Frontend
 
-Il frontend è sviluppato con React e Vite. Per aggiungere nuove funzionalità al frontend:
+The frontend is built using React and Vite. To add new features:
 
-1. Naviga nella directory `frontend`
-2. Modifica i file nella directory `src`
-3. Esegui l'applicazione in modalità sviluppo con `npm run dev`
-4. Compila il frontend per la produzione con `npm run build`
+1. Navigate to the `frontend` folder
+2. Edit files in the `src` directory
+3. Run the dev server using `npm run dev`
+4. Build the frontend for production using `npm run build`
 
-# API RESTful per Gioco RPG
+# RESTful API for RPG Game
 
-Questo progetto implementa un'API RESTful che espone le funzionalità del gioco RPG tramite endpoints HTTP, consentendo l'integrazione con varie interfacce utente (web, mobile, ecc.).
+This project implements a RESTful API exposing game features over HTTP, enabling integration with various user interfaces (web, mobile, etc.).
 
-## Configurazione
+## Configuration
 
-1. Assicurati di avere Python installato (Python 3.6+)
-2. Installa le dipendenze necessarie:
+1. Ensure Python is installed (Python 3.6+)
+2. Install required dependencies:
    ```
    pip install flask
    ```
-3. Avvia il server:
+3. Start the server:
    ```
    python server.py
    ```
-4. Il server sarà in esecuzione su `http://localhost:5000`
+4. The server will run on `http://localhost:5000`
 
 ## Endpoints
 
 ### `GET /`
-Mostra informazioni generali sul server e gli endpoints disponibili.
+Returns general server info and available endpoints.
 
 ### `POST /inizia`
-Crea una nuova partita.
+Starts a new game.
 
-**Parametri (JSON):**
-- `nome` (opzionale): Nome del personaggio (default: "Avventuriero")
-- `classe` (opzionale): Classe del personaggio (default: "guerriero")
+**Parameters (JSON):**
+- `nome` (optional): Character name (default: "Adventurer")
+- `classe` (optional): Character class (default: "warrior")
 
-**Esempio di richiesta:**
+**Example request:**
 ```json
 {
   "nome": "Thorin",
-  "classe": "guerriero"
+  "classe": "warrior"
 }
 ```
 
-**Risposta:**
+**Response:**
 ```json
 {
   "id_sessione": "550e8400-e29b-41d4-a716-446655440000",
-  "messaggio": "Gioco iniziato",
+  "messaggio": "Game started",
   "stato": {
     "nome": "Thorin",
-    "classe": "guerriero",
+    "classe": "warrior",
     "hp": 25,
     "max_hp": 25,
     "stato": "TavernaState",
-    "output": "Benvenuto alla taverna...",
+    "output": "Welcome to the tavern...",
     "posizione": {
-      "mappa": "taverna",
+      "mappa": "tavern",
       "x": 5,
       "y": 5
     },
-    "inventario": ["Spada corta", "Pozione di cura"]
+    "inventario": ["Short Sword", "Healing Potion"]
   }
 }
 ```
 
 ### `POST /comando`
-Invia un comando alla partita.
+Sends a command to the game.
 
-**Parametri (JSON):**
-- `id_sessione` (obbligatorio): ID della sessione di gioco
-- `comando` (obbligatorio): Comando da eseguire
+**Parameters (JSON):**
+- `id_sessione` (required): Game session ID
+- `comando` (required): Command to execute
 
-**Esempio di richiesta:**
+**Example:**
 ```json
 {
   "id_sessione": "550e8400-e29b-41d4-a716-446655440000",
-  "comando": "guarda"
-}
-```
-
-**Risposta:**
-```json
-{
-  "output": "Ti trovi in una taverna affollata...",
-  "stato": {
-    "nome": "Thorin",
-    "classe": "guerriero",
-    "hp": 25,
-    "max_hp": 25,
-    "stato": "TavernaState",
-    "output": "Ti trovi in una taverna affollata...",
-    "posizione": {
-      "mappa": "taverna",
-      "x": 5,
-      "y": 5
-    },
-    "inventario": ["Spada corta", "Pozione di cura"]
-  }
+  "comando": "look"
 }
 ```
 
 ### `GET /stato`
-Ottiene lo stato attuale della partita.
+Returns the current game state.
 
-**Parametri (query string):**
-- `id_sessione` (obbligatorio): ID della sessione di gioco
+**Query parameters:**
+- `id_sessione` (required)
 
-**Esempio di richiesta:**
+Example:
 ```
 GET /stato?id_sessione=550e8400-e29b-41d4-a716-446655440000
 ```
 
-**Risposta:**
-```json
-{
-  "nome": "Thorin",
-  "classe": "guerriero",
-  "hp": 25,
-  "max_hp": 25,
-  "stato": "TavernaState",
-  "output": "Ti trovi in una taverna affollata...",
-  "posizione": {
-    "mappa": "taverna",
-    "x": 5,
-    "y": 5
-  },
-  "inventario": ["Spada corta", "Pozione di cura"]
-}
-```
-
 ### `POST /salva`
-Salva la partita corrente.
+Saves the current game.
 
-**Parametri (JSON):**
-- `id_sessione` (obbligatorio): ID della sessione di gioco
-- `nome_file` (opzionale): Nome del file di salvataggio (default: "salvataggio.json")
-
-**Esempio di richiesta:**
-```json
-{
-  "id_sessione": "550e8400-e29b-41d4-a716-446655440000",
-  "nome_file": "partita_thorin.json"
-}
-```
-
-**Risposta:**
-```json
-{
-  "messaggio": "Partita salvata in partita_thorin.json"
-}
-```
+**Parameters (JSON):**
+- `id_sessione` (required)
+- `nome_file` (optional): Save file name (default: "salvataggio.json")
 
 ### `POST /carica`
-Carica una partita esistente.
+Loads a previously saved game.
 
-**Parametri (JSON):**
-- `nome_file` (opzionale): Nome del file di salvataggio (default: "salvataggio.json")
-
-**Esempio di richiesta:**
-```json
-{
-  "nome_file": "partita_thorin.json"
-}
-```
-
-**Risposta:**
-```json
-{
-  "id_sessione": "660f8500-e29b-41d4-a716-446655440001",
-  "messaggio": "Partita caricata da partita_thorin.json",
-  "stato": {
-    "nome": "Thorin",
-    "classe": "guerriero",
-    "hp": 25,
-    "max_hp": 25,
-    "stato": "TavernaState",
-    "output": "Ti trovi in una taverna affollata...",
-    "posizione": {
-      "mappa": "taverna",
-      "x": 5,
-      "y": 5
-    },
-    "inventario": ["Spada corta", "Pozione di cura"]
-  }
-}
-```
+**Parameters (JSON):**
+- `nome_file` (optional): Save file name (default: "salvataggio.json")
 
 ### `GET /mappa`
-Ottiene informazioni sulla mappa attuale.
+Returns information about the current map.
 
-**Parametri (query string):**
-- `id_sessione` (obbligatorio): ID della sessione di gioco
-
-**Esempio di richiesta:**
-```
-GET /mappa?id_sessione=550e8400-e29b-41d4-a716-446655440000
-```
-
-**Risposta:**
-```json
-{
-  "mappa": "taverna",
-  "x": 5,
-  "y": 5,
-  "oggetti_vicini": {
-    "pozione": {
-      "x": 6,
-      "y": 5,
-      "nome": "Pozione di cura"
-    }
-  },
-  "npg_vicini": {
-    "oste": {
-      "x": 4,
-      "y": 5,
-      "nome": "Oste"
-    }
-  }
-}
-```
+**Query parameters:**
+- `id_sessione` (required)
 
 ### `POST /muovi`
-Muove il giocatore nella direzione specificata.
+Moves the player in a direction.
 
-**Parametri (JSON):**
-- `id_sessione` (obbligatorio): ID della sessione di gioco
-- `direzione` (obbligatorio): Una delle direzioni "nord", "sud", "est", "ovest"
+**Parameters (JSON):**
+- `id_sessione` (required)
+- `direzione` (required): One of `"north"`, `"south"`, `"east"`, `"west"`
 
-**Esempio di richiesta:**
-```json
-{
-  "id_sessione": "550e8400-e29b-41d4-a716-446655440000",
-  "direzione": "nord"
-}
-```
+---
 
-**Risposta:**
-```json
-{
-  "spostamento": true,
-  "stato": {
-    "nome": "Thorin",
-    "classe": "guerriero",
-    "hp": 25,
-    "max_hp": 25,
-    "stato": "TavernaState",
-    "output": "Ti sposti verso nord.",
-    "posizione": {
-      "mappa": "taverna",
-      "x": 5,
-      "y": 4
-    },
-    "inventario": ["Spada corta", "Pozione di cura"]
-  }
-}
-```
+## Security Notes
 
-## Note sulla sicurezza
+- Sessions are saved using pickle; in production, consider a more secure solution.
+- No authentication is implemented; add auth if using this in production.
 
-- Le sessioni vengono salvate sul server in formato pickle. In un ambiente di produzione, considerare soluzioni più sicure.
-- L'API non implementa autenticazione. Aggiungere un sistema di autenticazione per un utilizzo in produzione.
+---
 
-## Persistenza dati
+## Data Persistence
 
-Le sessioni vengono salvate in due modi:
-1. In memoria (durante l'esecuzione del server)
-2. Su disco nella cartella "sessioni" (per persistenza tra riavvii del server)
+Sessions are saved in two ways:
+1. In memory (while the server is running)
+2. On disk inside the `sessioni/` folder (for persistence after restarts)
 
-Inoltre, è possibile salvare l'intera partita in un file JSON tramite l'endpoint `/salva`.
+You can also export the game to a JSON file using the `/salva` endpoint.
 
-## Nuove funzionalità
+---
 
-### Output strutturato per la GUI web
+## New Features
 
-Per preparare il backend all'interfaccia web con Flask + HTMX, sono state aggiunte nuove funzionalità di output strutturato:
+### Structured Output for Web GUI
 
-1. Ogni messaggio visibile al giocatore passa attraverso `gioco.io.mostra_messaggio()` 
-2. L'output è organizzato in modo chiaro e separato (senza newline a caso)
-3. È stato aggiunto un helper `get_output_structured()` che restituisce una lista di messaggi nel formato:
+To prepare the backend for integration with a Flask + HTMX web interface, new structured output features have been added:
+
+1. All player-visible messages go through `gioco.io.mostra_messaggio()`
+2. Output is structured and clean (no random newlines)
+3. A helper method `get_output_structured()` returns messages as:
 
 ```python
 [
-    {"tipo": "sistema", "testo": "Hai aperto il forziere"},
-    {"tipo": "narrativo", "testo": "Dentro trovi una pergamena"}
+    {"tipo": "system", "testo": "You opened the chest"},
+    {"tipo": "narrative", "testo": "Inside, you find a scroll"}
 ]
 ```
 
-Questa funzionalità è disponibile sia nella classe `TerminalIO` che in `GameIOWeb`, permettendo così di supportare entrambe le interfacce.
+This feature is available in both `TerminalIO` and `GameIOWeb`, enabling support for both interfaces.
 
-#### Utilizzo dell'output strutturato
+#### Usage example with `TerminalIO`
 
 ```python
-# Esempio di utilizzo con TerminalIO
 from core.io_interface import TerminalIO
 from core.game import Game
 
 io_handler = TerminalIO()
-# Creazione oggetto temporaneo gioco
-gioco = Game(None, None, io_handler, e_temporaneo=True)
-gioco.io.mostra_messaggio("Benvenuto avventuriero!")
-gioco.io.messaggio_sistema("Nuova partita iniziata")
+game = Game(None, None, io_handler, e_temporaneo=True)
+game.io.mostra_messaggio("Welcome, adventurer!")
+game.io.messaggio_sistema("New game started")
 
-# Ottieni tutti i messaggi in formato strutturato
-messaggi = gioco.io.get_output_structured()
+messages = game.io.get_output_structured()
 ```
 
+#### Usage with `GameIOWeb` (for web interface)
+
 ```python
-# Esempio di utilizzo con GameIOWeb (per interfaccia web)
 from core.stato_gioco import GameIOWeb, StatoGioco
 from entities.giocatore import Giocatore
 from states.taverna import TavernaState
 
-# Crea un giocatore e uno stato di gioco
-giocatore = Giocatore("Avventuriero", "guerriero")
+giocatore = Giocatore("Adventurer", "warrior")
 stato_gioco = StatoGioco(giocatore, TavernaState())
-
-# Elabora un comando
-stato_gioco.processa_comando("guarda")
-
-# Ottieni i messaggi in formato strutturato
-messaggi = stato_gioco.io_buffer.get_output_structured()
+stato_gioco.processa_comando("look")
+messages = stato_gioco.io_buffer.get_output_structured()
 ```
 
-Questa funzionalità facilita l'integrazione con framework web come Flask + HTMX, permettendo di formattare facilmente i messaggi per l'interfaccia utente. 
+This structured output is ideal for formatting frontend responses using web frameworks like Flask + HTMX.
+
+---
